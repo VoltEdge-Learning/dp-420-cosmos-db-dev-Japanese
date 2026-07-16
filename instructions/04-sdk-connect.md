@@ -1,159 +1,159 @@
 ---
 lab:
-    title: 'Connect to Azure Cosmos DB SQL API with the SDK'
-    module: 'Module 3 - Connect to Azure Cosmos DB SQL API with the SDK'
+    title: 'SDK を使用して Azure Cosmos DB SQL API に接続する'
+    module: 'モジュール 3 - SDK を使用して Azure Cosmos DB SQL API に接続する'
 ---
 
-# Connect to Azure Cosmos DB SQL API with the SDK
+# SDK を使用して Azure Cosmos DB SQL API に接続する
 
-The Azure SDK for .NET is a suite of libraries that provides a consistent developer interface to interact with many Azure services. The Azure SDK for .NET is built to the .NET Standard 2.0 specification ensuring that it can be used in .NET Framework (4.6.1 or above), .NET Core (2.1 or above), and .NET (5 or above) applications.
+.NET 用 Azure SDK は、多くの Azure サービスと対話するための一貫した開発者インターフェイスを提供するライブラリ スイートです。.NET 用 Azure SDK は .NET Standard 2.0 仕様に基づいて構築されており、.NET Framework（4.6.1 以上）、.NET Core（2.1 以上）、および .NET（5 以上）のアプリケーションで使用できることが保証されています。
 
-In this lab, you'll connect to an Azure Cosmos DB SQL API account using the Azure SDK for .NET.
+このラボでは、.NET 用 Azure SDK を使用して Azure Cosmos DB SQL API アカウントに接続します。
 
-## Prepare your development environment
+## 開発環境を準備する
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボを実施している環境に **DP-420** のラボ コード リポジトリをまだクローンしていない場合は、次の手順に従って実行してください。それ以外の場合は、以前にクローンしたフォルダーを **Visual Studio Code** で開きます。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動します。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code インターフェイスにまだ慣れていない場合は、[Visual Studio Code の Get Started ガイド][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+1. コマンド パレットを開いて **Git: Clone** を実行し、``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub リポジトリを任意のローカル フォルダーにクローンします。
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+    > &#128161; **CTRL+SHIFT+P** キーボード ショートカットを使用してコマンド パレットを開くことができます。
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+1. リポジトリのクローンが完了したら、選択したローカル フォルダーを **Visual Studio Code** で開きます。
 
-## Create an Azure Cosmos DB SQL API account
+## Azure Cosmos DB SQL API アカウントを作成する
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you will select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key and use them to connect to the Azure Cosmos DB SQL API account using the Azure SDK for .NET or any other SDK of your choice.
+Azure Cosmos DB は、複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングする際は、アカウントでサポートする API（たとえば **Mongo API** または **SQL API**）を選択します。Azure Cosmos DB SQL API アカウントのプロビジョニングが完了したら、endpoint と key を取得し、.NET 用 Azure SDK または任意のその他の SDK を使用して Azure Cosmos DB SQL API アカウントに接続できます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動します。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインします。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成します。残りのすべての設定は既定値のままにします。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
-    | **Limit the total amount of throughput that can be provisioned on this account** | *Unchecked* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか、新しく作成する* |
+    | **Account Name** | *グローバルに一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
+    | **Limit the total amount of throughput that can be provisioned on this account** | *オフ* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待ちます。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動します。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録します。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録します。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じます。
 
-## View the Microsoft.Azure.Cosmos library on NuGet
+## NuGet で Microsoft.Azure.Cosmos ライブラリを確認する
 
-The NuGet website contains a searchable index of packages that are available to import into your .NET applications. To import prerelease packages such as **Microsoft.Azure.Cosmos**, you can use the NuGet website to get the appropriate versions and commands to import the package into your applications.
+NuGet Web サイトには、.NET アプリケーションにインポート可能なパッケージの検索可能なインデックスがあります。**Microsoft.Azure.Cosmos** などのプレリリース パッケージをインポートするには、NuGet Web サイトを使用して、アプリケーションにパッケージをインポートするための適切なバージョンとコマンドを取得できます。
 
-1. In a web browser, navigate to the NuGet website (``nuget.org``).
+1. Web ブラウザーで、NuGet Web サイト (``nuget.org``) に移動します。
 
-1. Review the description of NuGet, the package manager for .NET, and its capabilities.
+1. .NET 用パッケージ マネージャーである NuGet の説明とその機能を確認します。
 
-1. Search for the **Microsoft.Azure.Cosmos** library on NuGet.org.
+1. NuGet.org で **Microsoft.Azure.Cosmos** ライブラリを検索します。
 
-1. Select the **.NET CLI** tab to observe the command required to import the latest version of this library into a .NET project.
+1. **.NET CLI** タブを選択して、このライブラリの最新バージョンを .NET プロジェクトにインポートするために必要なコマンドを確認します。
 
-    > &#128161; No need to record this command. You will use a specific version of the library later in this exercise.
+    > &#128161; このコマンドを記録する必要はありません。この演習の後半でライブラリの特定バージョンを使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じます。
 
-## Import the Microsoft.Azure.Cosmos library into a .NET project
+## Microsoft.Azure.Cosmos ライブラリを .NET プロジェクトにインポートする
 
-The .NET CLI includes an [add package][docs.microsoft.com/dotnet/core/tools/dotnet-add-package] command to import packages from a pre-configured package feed. A .NET installation uses NuGet as its default package feed.
+.NET CLI には、事前構成されたパッケージ フィードからパッケージをインポートするための [add package][docs.microsoft.com/dotnet/core/tools/dotnet-add-package] コマンドが含まれています。.NET のインストールでは、既定のパッケージ フィードとして NuGet を使用します。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **04-sdk-connect** folder.
+1. **Visual Studio Code** の **Explorer** ペインで、**04-sdk-connect** フォルダーを参照します。
 
-1. Open the context menu for the **04-sdk-connect** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **04-sdk-connect** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開きます。
 
-    > &#128221; This command will open the terminal with the starting directory already set to the **04-sdk-connect** folder.
+    > &#128221; このコマンドでは、開始ディレクトリがすでに **04-sdk-connect** フォルダーに設定された状態でターミナルが開きます。
 
-1. Add the [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] package from NuGet using the following command:
+1. 次のコマンドを使用して、NuGet から [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] パッケージを追加します。
 
     ```
     dotnet add package Microsoft.Azure.Cosmos --version 3.22.1
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じます。
 
-## Use the Microsoft.Azure.Cosmos library
+## Microsoft.Azure.Cosmos ライブラリを使用する
 
-Once the Azure Cosmos DB library from the Azure SDK for .NET has been imported, you can immediately use its classes within the [Microsoft.Azure.Cosmos][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos] namespace to connect to an Azure Cosmos DB SQL API account. The [CosmosClient][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient] class is the core class that is used to make the initial connection to an Azure Cosmos DB SQL API account.
+.NET 用 Azure SDK の Azure Cosmos DB ライブラリをインポートしたら、すぐに [Microsoft.Azure.Cosmos][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos] 名前空間内のクラスを使用して Azure Cosmos DB SQL API アカウントに接続できます。[CosmosClient][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient] クラスは、Azure Cosmos DB SQL API アカウントへの初期接続を行うために使用される中核クラスです。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **04-sdk-connect** folder.
+1. **Visual Studio Code** の **Explorer** ペインで、**04-sdk-connect** フォルダーを参照します。
 
-1. Open the empty **script.cs** code file.
+1. 空の **script.cs** コード ファイルを開きます。
 
-1. Add using blocks for the built-in **System** and **System.Linq** namespaces:
+1. 組み込みの **System** および **System.Linq** 名前空間の using ブロックを追加します。
 
     ```
     using System;
     using System.Linq;
     ```
 
-1. Add a using block for the [Microsoft.Azure.Cosmos][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos] namespace:
+1. [Microsoft.Azure.Cosmos][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos] 名前空間の using ブロックを追加します。
 
     ```
     using Microsoft.Azure.Cosmos;
     ```
 
-1. Add a **string** variable named **endpoint** with its value set to the **endpoint** of the Azure Cosmos DB account you created earlier.
+1. **endpoint** という名前の **string** 変数を追加し、その値を先ほど作成した Azure Cosmos DB アカウントの **endpoint** に設定します。
   
     ```
     string endpoint = "<cosmos-endpoint>";
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/**, then the C# statement would be: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**.
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** の場合、C# ステートメントは次のようになります: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**。
 
-1. Add a **string** variable named **key** with its value set to the **key** of the Azure Cosmos DB account you created earlier.
+1. **key** という名前の **string** 変数を追加し、その値を先ほど作成した Azure Cosmos DB アカウントの **key** に設定します。
 
     ```
     string key = "<cosmos-key>";
     ```
 
-    > &#128221; For example, if your key is: **fDR2ci9QgkdkvERTQ==**, then the C# statement would be: **string key = "fDR2ci9QgkdkvERTQ==";**.
+    > &#128221; たとえば、key が **fDR2ci9QgkdkvERTQ==** の場合、C# ステートメントは次のようになります: **string key = "fDR2ci9QgkdkvERTQ==";**。
 
-1. Add a new variable named **client** of type [CosmosClient][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient] using the **endpoint** and **key** variables in the constructor:
+1. コンストラクターで **endpoint** 変数と **key** 変数を使用し、[CosmosClient][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient] 型の **client** という名前の新しい変数を追加します。
   
     ```
     CosmosClient client = new (endpoint, key);
     ```
 
-1. Add a new variable named **account** of type [AccountProperties][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties] using the asynchronous result of invoking the [ReadAccountAsync][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.readaccountasync] method of the **client** variable:
+1. **client** 変数の [ReadAccountAsync][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.readaccountasync] メソッドを呼び出した非同期結果を使用して、[AccountProperties][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties] 型の **account** という名前の新しい変数を追加します。
 
     ```
     AccountProperties account = await client.ReadAccountAsync();
     ```
 
-1. Use the built-in **Console.WriteLine** static method to print the [Id][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties.id] property of the AccountProperties class with a header titled **Account Name**:
+1. 組み込みの **Console.WriteLine** 静的メソッドを使用して、**Account Name** という見出しで AccountProperties クラスの [Id][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties.id] プロパティを出力します。
 
     ```
     Console.WriteLine($"Account Name:\t{account.Id}");
     ```
 
-1. Use the built-in **Console.WriteLine** static method to query the [WritableRegions][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties.writableregions] property of the AccountProperties class and then print the [Name][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountregion.name] property of the first result with a header titled **Primary Region**:
+1. 組み込みの **Console.WriteLine** 静的メソッドを使用して AccountProperties クラスの [WritableRegions][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountproperties.writableregions] プロパティをクエリし、最初の結果の [Name][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.accountregion.name] プロパティを **Primary Region** という見出しで出力します。
 
     ```
     Console.WriteLine($"Primary Region:\t{account.WritableRegions.FirstOrDefault()?.Name}");
     ```
 
-1. Once you are done, your code file should now include:
+1. 完了すると、コード ファイルには次の内容が含まれているはずです。
   
     ```
     using System;
@@ -172,30 +172,30 @@ Once the Azure Cosmos DB library from the Azure SDK for .NET has been imported, 
     Console.WriteLine($"Primary Region:\t{account.WritableRegions.FirstOrDefault()?.Name}");
     ```
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** します。
 
-## Test the script
+## スクリプトをテストする
 
-Now that the .NET code to connect to the Azure Cosmos DB SQL API account is complete, you can test the script. This script will print the name of the account, and the name of the first writable region. When you created the account, you specified a location and you should expect to see that same location value printed as the result of this script.
+Azure Cosmos DB SQL API アカウントに接続する .NET コードが完成したので、スクリプトをテストできます。このスクリプトは、アカウント名と最初の書き込み可能リージョンの名前を出力します。アカウント作成時に場所を指定したため、このスクリプトの結果として同じ場所の値が出力されるはずです。
 
-1. In **Visual Studio Code**, open the context menu for the **04-sdk-connect** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **04-sdk-connect** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開きます。
 
-1. Build and run the project using the [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] command:
+1. [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] コマンドを使用してプロジェクトをビルドし、実行します。
 
     ```
     dotnet run
     ```
 
-1. The script will now output the name of the account, and the first writable region. For example, if you named the account **dp420**, and the first writable region was **West US 2**, the script would output:
+1. これでスクリプトはアカウント名と最初の書き込み可能リージョンを出力します。たとえば、アカウント名を **dp420** にし、最初の書き込み可能リージョンが **West US 2** だった場合、スクリプトは次のように出力します。
 
     ```
     Account Name:   dp420
     Primary Region: West US 2
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じます。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じます。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [docs.microsoft.com/dotnet/api/microsoft.azure.cosmos]: https://docs.microsoft.com/dotnet/api/microsoft.azure.cosmos
