@@ -1,40 +1,51 @@
----
-lab:
-    title: 'Create an Azure Cosmos DB SQL API container using Azure Resource Manager templates'
-    module: 'Module 12 - Manage an Azure Cosmos DB SQL API solution using DevOps practices'
----
+# Lab 12b - DevOps プラクティスを使用して Azure Cosmos DB for NoSQL ソリューションを管理する
 
-# Create an Azure Cosmos DB SQL API container using Azure Resource Manager templates
+## ラボ シナリオ
 
-Azure Resource Manager templates are JSON files that declaratively define the infrastructure that you wish to deploy to Azure. Azure Resource Manager templates are a common infrastrucutre-as-code solution to deploying services to Azure. Bicep, takes the concept a bit further by defining an easier to read domain-specific language that can be used to create JSON templates.
+Azure Resource Manager テンプレートは、Azure にデプロイしたいインフラストラクチャを宣言的に定義する JSON ファイルです。Azure Resource Manager テンプレートは、Azure にサービスをデプロイするための一般的な infrastructure-as-code ソリューションです。Bicep はこの考え方をさらに発展させ、JSON テンプレートを作成するための、より読みやすいドメイン固有言語を提供します。
 
-In this lab, you'll create a new Azure Cosmos DB account, database, and container using an Azure Resource Manager template. You will first create the template from raw JSON, then you will create the template using the Bicep domain-specific language.
+このラボでは、Azure Resource Manager テンプレートを使用して新しい Azure Cosmos DB アカウント、データベース、およびコンテナーを作成します。最初に生の JSON からテンプレートを作成し、次に Bicep ドメイン固有言語を使用してテンプレートを作成します。
 
-## Prepare your development environment
+## ラボの目的
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボでは、次のタスクを完了します。
+- タスク 1: 開発環境を準備する。
+- タスク 2: Azure Resource Manager テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成する。
+- タスク 3: デプロイされた Azure Cosmos DB リソースを確認する。
+- タスク 4: Bicep テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成する。
+- タスク 5: Bicep テンプレートのデプロイ結果を確認する。
 
-1. Start **Visual Studio Code**.
+## 推定所要時間: 30 分
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+## アーキテクチャ図
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+![image](architecturedia/lab30.png)
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+## 演習 1: Azure Resource Manager テンプレートを使用して Azure Cosmos DB for NoSQL コンテナーを作成する
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+### タスク 1: 開発環境を準備する
 
-## Create Azure Cosmos DB SQL API resources using Azure Resource Manager templates
+1. Visual Studio Code を起動してください（プログラム アイコンはデスクトップにピン留めされています）。
 
-The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes it possible to deploy accounts, databases, and containers using JSON files. While the files may be complex, they do follow a predictable format and can be written with the assistance of a Visual Studio Code extension.
+2. 左側ペインの **Extension (1)** アイコンを選択してください。検索バーに **C# (2)** を入力し、表示された **extension (3)** を選択して、最後に **Install (4)** を選択してください。
 
-> &#128161; If you are stuck and cannot figure out a syntax error with your template, use this [solution Azure Resource Manager template][github.com/arm-template-guide] as a guide.
+    ![](media/C-hash-extension.png)
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **31-create-container-arm-template** folder.
+3. 画面左上の **file** オプションを選択し、メニューから **Open Folder** を選択して **C:\AllFiles** に移動してください。
 
-1. Open the **deploy.json** file.
+4. **dp-420-cosmos-db-dev** フォルダーを選択し、**Select Folder** をクリックしてください。
 
-1. Observe the empty Azure Resource Manager template:
+### タスク 2: Azure Resource Manager テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成する
+
+Azure Resource Manager の **Microsoft.DocumentDB** リソース プロバイダーにより、JSON ファイルを使用してアカウント、データベース、およびコンテナーをデプロイできます。ファイルは複雑になることがありますが、予測可能な形式に従っており、Visual Studio Code 拡張機能の支援を受けて作成できます。
+
+> **Note** : テンプレートの構文エラーが解決できない場合は、[solution Azure Resource Manager template][github.com/arm-template-guide] を参照してください。
+
+1. **Visual Studio Code** の **Explorer** ペインで **31-create-container-arm-template** フォルダーに移動してください。
+
+1. **deploy.json** ファイルを開いてください。
+
+1. 空の Azure Resource Manager テンプレートを確認してください。
 
     ```
     {
@@ -45,7 +56,7 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     }
     ```
 
-1. Within the **resources** array, add a new JSON object to create a new Azure Cosmos DB account:
+1. **resources** 配列内に、新しい Azure Cosmos DB アカウントを作成するための新しい JSON オブジェクトを追加してください。
 
     ```
     {
@@ -64,10 +75,10 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Resource type** | *Microsoft.DocumentDB/databaseAccounts* |
     | **API version** | *2021-05-15* |
     | **Account name** | *csmsarm* &amp; *unique string generated from account name*  |
@@ -75,66 +86,66 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     | **Account offer type** | *Standard* |
     | **Locations** | *Only West US* |
 
-1. Save the **deploy.json** file.
+1. **deploy.json** ファイルを保存してください。
 
-1. Open the context menu for the **31-create-container-arm-template** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **31-create-container-arm-template** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナルを開いてください。
 
-    > &#128221; This command will open the terminal with the starting directory already set to the **31-create-container-arm-template** folder.
+    > **Note** : このコマンドを実行すると、開始ディレクトリが **31-create-container-arm-template** フォルダーに設定された状態でターミナルが開きます。
 
-1. Begin the interactive login procedure for the Azure CLI using the following command:
+1. 次のコマンドを使用して Azure CLI の対話型ログイン手順を開始してください。
 
     ```
     az login
     ```
 
-1. The Azure CLI will automatically open a web browser window or tab. within the browser instance, sign into the Azure CLI using the Microsoft credentials associated with your subscription.
+1. Azure CLI は自動的に Web ブラウザー ウィンドウまたはタブを開きます。ブラウザー上で、サブスクリプションに関連付けられた Microsoft 資格情報を使用して Azure CLI にサインインしてください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-1. Check if your lab provider has created a resource group for you, if so, record its name since you will need it in the next section.
+1. ラボ プロバイダーがリソース グループを作成しているか確認してください。作成されている場合は次のセクションで必要になるため、その名前を記録してください。
 
     ```
     az group list --query "[].{ResourceGroupName:name}" -o table
     ```
     
-    This command could return multiple Resource Group names.
+    このコマンドは複数の Resource Group 名を返す場合があります。
 
-1. (Optional) ***If no Resource Group was created for you***, choose a Resource Group name and create it. *Be aware that some lab envrionments might be locked down and you will need an administrator to create the Resource Group for you.*
+1. （任意）***リソース グループが作成されていない場合*** は、リソース グループ名を決めて作成してください。*一部のラボ環境は制限されており、管理者によるリソース グループ作成が必要な場合があります。*
 
-    i. Get the your location name closet to you from this list
+    i. 次の一覧から、最寄りの location 名を取得してください。
 
     ```
     az account list-locations --query "sort_by([].{YOURLOCATION:name, DisplayName:regionalDisplayName}, &YOURLOCATION)" --output table
     ```
 
-    ii. Create the resource group.  *Be aware that some lab envrionments might be locked down and you will need an administrator to create the Resource Group for you.*
+    ii. リソース グループを作成してください。*一部のラボ環境は制限されており、管理者によるリソース グループ作成が必要な場合があります。*
     ```
     az group create --name YOURRESOURCEGROUPNAME --location YOURLOCATION
     ```
 
-1. Create a new variable name **resourceGroup** using the name of the resource group you created or viewed earlier in this lab using the following command:
+1. 次のコマンドを使用し、このラボで先ほど作成または確認したリソース グループ名で **resourceGroup** という新しい変数を作成してください。
 
     ```
     $resourceGroup="<resource-group-name>"
     ```
 
-    > &#128221; For example, if your resource group is named **dp420**, the command will be **$resourceGroup="dp420"**.
+    > **Note** : たとえばリソース グループ名が **DP-420-xxxxxx** の場合、コマンドは **$resourceGroup="DP-420-xxxxxx"** になります。
 
-1. Use the **echo** cmdlet to write the value of the **$resourceGroup** variable to the terminal output using the following command:
+1. 次のコマンドを使用して **echo** コマンドレットを実行し、**$resourceGroup** 変数の値をターミナル出力に表示してください。
 
     ```
     echo $resourceGroup
     ```
 
-1. Deploy the Azure Resource Manager template using the [az deployment group create][docs.microsoft.com/cli/azure/deployment/group] command:
+1. [az deployment group create][docs.microsoft.com/cli/azure/deployment/group] コマンドを使用して Azure Resource Manager テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "arm-deploy-account" --resource-group $resourceGroup --template-file .\deploy.json
     ```
 
-1. Leave the integrated terminal open and return to the editor for the **deploy.json** file.
+1. 統合ターミナルは開いたままにし、**deploy.json** ファイルのエディターに戻ってください。
 
-1. Within the **resources** array, add another new JSON object to create a new Azure Cosmos DB SQL API database:
+1. **resources** 配列内に、新しい Azure Cosmos DB for NoSQL データベースを作成するための JSON オブジェクトを追加してください。
 
     ```
     ,
@@ -153,29 +164,29 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Resource type** | *Microsoft.DocumentDB/databaseAccounts/sqlDatabases* |
     | **API version** | *2021-05-15* |
     | **Account name** | *csmsarm* &amp; *unique string generated from account name* &amp; */cosmicworks*  |
     | **Resource id** | *cosmicworks* |
     | **Dependencies** | *databaseAccount created earlier in the template* |
 
-1. Save the **deploy.json** file.
+1. **deploy.json** ファイルを保存してください。
 
-1. Return to the integrated terminal.
+1. 統合ターミナルに戻ってください。
 
-1. Deploy the Azure Resource Manager template using the **az deployment group create** command:
+1. **az deployment group create** コマンドを使用して Azure Resource Manager テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "arm-deploy-database" --resource-group $resourceGroup --template-file .\deploy.json
     ```
 
-1. Leave the integrated terminal open and return to the editor for the **deploy.json** file.
+1. 統合ターミナルは開いたままにし、**deploy.json** ファイルのエディターに戻ってください。
 
-1. Within the **resources** array, add another new JSON object to create a new Azure Cosmos DB SQL API container:
+1. **resources** 配列内に、新しい Azure Cosmos DB for NoSQL コンテナーを作成するための JSON オブジェクトを追加してください。
 
     ```
     ,
@@ -203,10 +214,10 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Resource type** | *Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers* |
     | **API version** | *2021-05-15* |
     | **Account name** | *csmsarm* &amp; *unique string generated from account name* &amp; */cosmicworks/products*  |
@@ -215,51 +226,51 @@ The **Microsoft.DocumentDB** resource provider in Azure Resource Manager makes i
     | **Partition key** | */categoryId* |
     | **Dependencies** | *Account and database created earlier in the template* |
 
-1. Save the **deploy.json** file.
+1. **deploy.json** ファイルを保存してください。
 
-1. Return to the integrated terminal.
+1. 統合ターミナルに戻ってください。
 
-1. Deploy the final Azure Resource Manager template using the **az deployment group create** command:
+1. **az deployment group create** コマンドを使用して最終的な Azure Resource Manager テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "arm-deploy-container" --resource-group $resourceGroup --template-file .\deploy.json
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-## Observe deployed Azure Cosmos DB resources
+### タスク 3: デプロイされた Azure Cosmos DB リソースを確認する
 
-Once your Azure Cosmos DB SQL API resources are deployed, you can navigate to the resources in the Azure portal. Using the Data Explorer, you will validate that the account, database, and container were all deployed and configured correctly.
+Azure Cosmos DB for NoSQL リソースがデプロイされたら、Azure portal でリソースに移動できます。Data Explorer を使用して、アカウント、データベース、およびコンテナーが正しくデプロイおよび構成されていることを検証します。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab with the **csmsarm** prefix.
+1. **Resource groups** を選択し、このラボで先ほど作成または確認したリソース グループを選択してから、**csmsarm** プレフィックスでこのラボ中に作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で **Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**API for NoSQL** ナビゲーション ツリー内に新しい **products** コンテナー ノードがあることを確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **Scale & Settings**.
+1. **API for NoSQL** ナビゲーション ツリーで **products** コンテナー ノードを選択し、**Scale & Settings** を選択してください。
 
-1. Observe the values within the **Scale** section. Specifically, observe that the **Manual** option is selected in the **Throughput** section and that the provisioned throughput is set to **400** RU/s.
+1. **Scale** セクションの値を確認してください。特に、**Throughput** セクションで **Manual** オプションが選択され、プロビジョニング済みスループットが **400** RU/s に設定されていることを確認してください。
 
-1. Observe the values within the **Settings** section. Specifically, observe that the **Partition key** value is set to **/categoryId**.
+1. **Settings** セクションの値を確認してください。特に、**Partition key** の値が **/categoryId** に設定されていることを確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Create Azure Cosmos DB SQL API resources using Bicep templates
+### タスク 4: Bicep テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成する
 
-Bicep is an efficient domain-specific language that makes it simpler and easier to deploy Azure resources than Azure Resource Manager templates. You will deploy the same exact resource using Bicep and a different name to illustrate the difference\[s\].
+Bicep は効率的なドメイン固有言語であり、Azure Resource Manager テンプレートよりも Azure リソースのデプロイをシンプルかつ容易にします。違いを示すために、同じリソースを Bicep と別の名前でデプロイします。
 
-> &#128161; If you are stuck and cannot figure out a syntax error with your template, use this [solution Bicep template][github.com/bicep-template-guide] as a guide.
+> **Note** : テンプレートの構文エラーが解決できない場合は、[solution Bicep template][github.com/bicep-template-guide] を参照してください。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **31-create-container-arm-template** folder.
+1. **Visual Studio Code** の **Explorer** ペインで **31-create-container-arm-template** フォルダーに移動してください。
 
-1. Open the empty **deploy.bicep** file.
+1. 空の **deploy.bicep** ファイルを開いてください。
 
-1. Within the file, add a new object to create a new Azure Cosmos DB account:
+1. ファイル内に、新しい Azure Cosmos DB アカウントを作成するための新しいオブジェクトを追加してください。
 
     ```
     resource Account 'Microsoft.DocumentDB/databaseAccounts@2021-05-15' = {
@@ -276,10 +287,10 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Alias** | *Account* |
     | **Name** | *csmsarm* &amp; *unique string generated from account name* |
     | **Resource type** | *Microsoft.DocumentDB/databaseAccounts/sqlDatabases* |
@@ -288,27 +299,27 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     | **Account offer type** | *Standard* |
     | **Locations** | *Only West US* |
 
-1. Save the **deploy.bicep** file.
+1. **deploy.bicep** ファイルを保存してください。
 
-1. Open the context menu for the **31-create-container-arm-template** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **31-create-container-arm-template** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナルを開いてください。
 
-1. Create a new variable name **resourceGroup** using the name of the resource group you created or viewed earlier in this lab using the following command:
+1. 次のコマンドを使用し、このラボで先ほど作成または確認したリソース グループ名で **resourceGroup** という新しい変数を作成してください。
 
     ```
     $resourceGroup="<resource-group-name>"
     ```
 
-    > &#128221; For example, if your resource group is named **dp420**, the command will be **$resourceGroup="dp420"**.
+    > **Note** : たとえばリソース グループ名が **DP-420-xxxxxx** の場合、コマンドは **$resourceGroup="DP-420-xxxxxx"** になります。
 
-1. Deploy the Bicep template using the **az deployment group create** command:
+1. **az deployment group create** コマンドを使用して Bicep テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "bicep-deploy-account" --resource-group $resourceGroup --template-file .\deploy.bicep
     ```
 
-1. Leave the integrated terminal open and return to the editor for the **deploy.bicep** file.
+1. 統合ターミナルは開いたままにし、**deploy.bicep** ファイルのエディターに戻ってください。
 
-1. Within the file, add another new object to create a new Azure Cosmos DB database:
+1. ファイル内に、新しい Azure Cosmos DB データベースを作成するためのオブジェクトを追加してください。
 
     ```
     resource Database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2021-05-15' = {
@@ -322,10 +333,10 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Parent** | *Account created earlier in the template* |
     | **Alias** | *Database* |
     | **Name** | *cosmicworks*  |
@@ -333,19 +344,19 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     | **API version** | *2021-05-15* |
     | **Resource id** | *cosmicworks* |
 
-1. Save the **deploy.bicep** file.
+1. **deploy.bicep** ファイルを保存してください。
 
-1. Return to the integrated terminal.
+1. 統合ターミナルに戻ってください。
 
-1. Deploy the Bicep template using the **az deployment group create** command:
+1. **az deployment group create** コマンドを使用して Bicep テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "bicep-deploy-database" --resource-group $resourceGroup --template-file .\deploy.bicep
     ```
 
-1. Leave the integrated terminal open and return to the editor for the **deploy.bicep** file.
+1. 統合ターミナルは開いたままにし、**deploy.bicep** ファイルのエディターに戻ってください。
 
-1. Within the file, add another new object to create a new Azure Cosmos DB container:
+1. ファイル内に、新しい Azure Cosmos DB コンテナーを作成するためのオブジェクトを追加してください。
 
     ```
     resource Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-05-15' = {
@@ -367,10 +378,10 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     }
     ```
 
-    The object is configured with the following settings:
+    このオブジェクトは次の設定で構成されています。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Parent** | *Database created earlier in the template* |
     | **Alias** | *Container* |
     | **Name** | *products*  |
@@ -378,51 +389,58 @@ Bicep is an efficient domain-specific language that makes it simpler and easier 
     | **Throughput** | *400* |
     | **Partition key path** | */categoryId* |
 
-1. Save the **deploy.bicep** file.
+1. **deploy.bicep** ファイルを保存してください。
 
-1. Return to the integrated terminal.
+1. 統合ターミナルに戻ってください。
 
-1. Deploy the final Bicep template using the **az deployment group create** command:
+1. **az deployment group create** コマンドを使用して最終的な Bicep テンプレートをデプロイしてください。
 
     ```
     az deployment group create --name "bicep-deploy-container" --resource-group $resourceGroup --template-file .\deploy.bicep
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## Observe Bicep template deployment results
+### タスク 5: Bicep テンプレートのデプロイ結果を確認する
 
-Bicep deployments can be validated using many of the same techniques as Azure Resource Manager deployments. Not only will you validate that your account, database, and container were successfully deployed; you will also view the deployment history across all six deployments.
+Bicep デプロイは、Azure Resource Manager デプロイと同様の手法で検証できます。アカウント、データベース、およびコンテナーが正常にデプロイされたことを検証するだけでなく、6 回すべてのデプロイ履歴も確認します。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab.
+1. **Resource groups** を選択し、このラボで先ほど作成または確認したリソース グループを選択してください。
 
-1. Within the resource group, navigate to the **Deployments** pane.
+1. リソース グループ内で **Deployments** ペインに移動してください。
 
-1. Observe the six deployments from the Azure Resource Manager templates and Bicep files.
+1. Azure Resource Manager テンプレートと Bicep ファイルによる 6 つのデプロイを確認してください。
 
-1. Still within the resource group, navigate to the **Overview** pane.
+1. 引き続き同じリソース グループ内で **Overview** ペインに移動してください。
 
-1. Still within the resource group, select the **Azure Cosmos DB account** resource you created in this lab with the **csmsbicep** prefix.
+1. 引き続き同じリソース グループ内で、このラボ中に **csmsbicep** プレフィックスで作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で **Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**API for NoSQL** ナビゲーション ツリー内に新しい **products** コンテナー ノードがあることを確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **Scale & Settings**.
+1. **API for NoSQL** ナビゲーション ツリーで **products** コンテナー ノードを選択し、**Scale & Settings** を選択してください。
 
-1. Observe the values within the **Scale** section. Specifically, observe that the **Manual** option is selected in the **Throughput** section and that the provisioned throughput is set to **400** RU/s.
+1. **Scale** セクションの値を確認してください。特に、**Throughput** セクションで **Manual** オプションが選択され、プロビジョニング済みスループットが **400** RU/s に設定されていることを確認してください。
 
-1. Observe the values within the **Settings** section. Specifically, observe that the **Partition key** value is set to **/categoryId**.
+1. **Settings** セクションの値を確認してください。特に、**Partition key** の値が **/categoryId** に設定されていることを確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-[code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
-[docs.microsoft.com/cli/azure/deployment/group]: https://docs.microsoft.com/cli/azure/deployment/group
-[github.com/arm-template-guide]: https://raw.githubusercontent.com/Sidney-Andrews/acdbsad/solutions/31-create-container-arm-template/deploy.json
-[github.com/bicep-template-guide]: https://raw.githubusercontent.com/Sidney-Andrews/acdbsad/solutions/31-create-container-arm-template/deploy.bicep
+### レビュー
+
+このラボでは、次を完了しました。
+
+- 開発環境を準備した。
+- Azure Resource Manager テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成した。
+- デプロイされた Azure Cosmos DB リソースを確認した。
+- Bicep テンプレートを使用して Azure Cosmos DB for NoSQL リソースを作成した。
+- Bicep テンプレートのデプロイ結果を確認した。
+
+### ラボは正常に完了しました
