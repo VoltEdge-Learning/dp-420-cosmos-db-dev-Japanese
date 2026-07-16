@@ -1,229 +1,239 @@
----
-lab:
-    title: 'Adjust provisioned throughput using an Azure CLI script'
-    module: 'Module 12 - Manage an Azure Cosmos DB SQL API solution using DevOps practices'
----
+# Lab 12a - DevOps プラクティスを使用して Azure Cosmos DB for NoSQL ソリューションを管理する
 
-# Adjust provisioned throughput using an Azure CLI script
+## ラボ シナリオ
 
-The Azure CLI is a set of commands that you can use to manage various resources across Azure. Azure Cosmos DB has a rich command group that can be used to manage various facets of an Azure Cosmos DB account regardless of the selected API.
+Azure CLI は、Azure 全体のさまざまなリソースを管理するために使用できるコマンド セットです。Azure Cosmos DB には、選択した API に関係なく Azure Cosmos DB アカウントのさまざまな側面を管理できる豊富なコマンド グループが用意されています。
 
-In this lab, you'll create an Azure Cosmos DB account, database, and container using the Azure CLI. You will then make adjustments to the provisioned throughput using the Azure CLI.
+このラボでは、Azure CLI を使用して Azure Cosmos DB アカウント、データベース、およびコンテナーを作成します。その後、Azure CLI を使用してプロビジョニング済みスループットを調整します。
 
-## Log in to the Azure CLI
+## ラボの目的
 
-Before using the Azure CLI, you must first check the version of the CLI and login using your Azure credentials.
+このラボでは、次のタスクを完了します。
+- タスク 1: Azure CLI にログインする。
+- タスク 2: Azure CLI を使用して Azure Cosmos DB アカウントを作成する。
+- タスク 3: Azure CLI を使用して Azure Cosmos DB for NoSQL リソースを作成する。
+- タスク 4: Azure CLI を使用して既存コンテナーのスループットを調整する。
 
-1. Start **Visual Studio Code**.
+## 推定所要時間: 30 分
 
-1. Open the **Terminal** menu and then select **New Terminal** to open a new terminal instance.
+## アーキテクチャ図
 
-1. View the version of the Azure CLI using the following command:
+![image](architecturedia/lab29.png)
+
+## 演習 1: Azure CLI スクリプトを使用してプロビジョニング済みスループットを調整する
+
+### タスク 1: Azure CLI にログインする
+
+Azure CLI を使用する前に、まず CLI のバージョンを確認し、Azure 資格情報でログインする必要があります。
+
+1. **Visual Studio Code** を起動してください。
+
+1. **Terminal** メニューを開き、**New Terminal** を選択して新しいターミナルを開いてください。
+
+1. 次のコマンドを使用して Azure CLI のバージョンを確認してください。
 
     ```
     az --version
     ```
 
-1. View the most common Azure CLI command groups using the following command:
+1. 次のコマンドを使用して、よく使用される Azure CLI コマンド グループを確認してください。
 
     ```
     az --help
     ```
 
-1. Begin the interactive login procedure for the Azure CLI using the following command:
+1. 次のコマンドを使用して Azure CLI の対話型ログイン手順を開始してください。
 
     ```
     az login
     ```
 
-1. The Azure CLI will automatically open a web browser window or tab. within the browser instance, sign into the Azure CLI using the Microsoft credentials associated with your subscription.
+1. Azure CLI は自動的に Web ブラウザー ウィンドウまたはタブを開きます。ブラウザー上で、サブスクリプションに関連付けられた Microsoft 資格情報を使用して Azure CLI にサインインしてください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-1. Check if your lab provider has created a resource group for you, if so, record its name since you will need it in the next section.
+1. ラボ プロバイダーがリソース グループを作成しているか確認してください。作成されている場合は、次のセクションで必要になるため、その名前を記録してください。
 
     ```
     az group list --query "[].{ResourceGroupName:name}" -o table
     ```
-    
-    This command could return multiple Resource Group names.
 
-1. (Optional) ***If no Resource Group was created for you***, choose a Resource Group name and create it. *Be aware that some lab envrionments might be locked down and you will need an administrator to create the Resource Group for you.*
+    このコマンドは複数の Resource Group 名を返す場合があります。
 
-    i. Get the your location name closet to you from this list
+### タスク 2: Azure CLI を使用して Azure Cosmos DB アカウントを作成する
 
-    ```
-    az account list-locations --query "sort_by([].{YOURLOCATION:name, DisplayName:regionalDisplayName}, &YOURLOCATION)" --output table
-    ```
+**cosmosdb** コマンド グループには、CLI を使用して Azure Cosmos DB アカウントを作成および管理するための基本コマンドが含まれています。Azure Cosmos DB アカウントにはアドレス可能な URI があるため、スクリプトで作成する場合でも、新しいアカウント名はグローバルに一意である必要があります。
 
-    ii. Create the resource group.  *Be aware that some lab envrionments might be locked down and you will need an administrator to create the Resource Group for you.*
-    ```
-    az group create --name YOURRESOURCEGROUPNAME --location YOURLOCATION
-    ```
+1. **Visual Studio Code** で既に開いているターミナルに戻ってください。
 
-## Create Azure Cosmos DB account using the Azure CLI
-
-The **cosmosdb** command group contains basic commands to create and manage Azure Cosmos DB accounts using the CLI. Since an Azure Cosmos DB account has an addressable URI, it's important to create a globally unique name for your new account, even if you create it via script.
-
-1. Return to the terminal instance already open within **Visual Studio Code**.
-
-1. View the most command Azure CLI commands related to **Azure Cosmos DB** using the following command:
+1. 次のコマンドを使用して、**Azure Cosmos DB** に関連する主な Azure CLI コマンドを確認してください。
 
     ```
     az cosmosdb --help
     ```
 
-1. Create a new variable named **suffix** with the [Get-Random][docs.microsoft.com/powershell/module/microsoft.powershell.utility/get-random] PowerShell cmdlet using the following command:
+1. 次のコマンドを使用して、[Get-Random][docs.microsoft.com/powershell/module/microsoft.powershell.utility/get-random] PowerShell コマンドレットで **suffix** という新しい変数を作成してください。
 
     ```
     $suffix=Get-Random -Maximum 1000000
     ```
 
-    > &#128221; The Get-Random cmdlet generates a random integer between 0 and 1,000,000. This is useful because our services requires a globally unique name.
+    >**Note**: Get-Random コマンドレットは 0 から 1,000,000 の間のランダム整数を生成します。サービスにはグローバル一意名が必要なため、これは有用です。
 
-1. Create another new variable name **accountName** using the hard-coded string **csms** and variable substitution to inject the value of the **$suffix** variable using the following command:
+1. 次のコマンドを使用して、固定文字列 **csms** と変数置換により **$suffix** 変数の値を注入し、**accountName** という新しい変数を作成してください。
 
     ```
     $accountName="csms$suffix"
     ```
 
-1. Create another new variable name **resourceGroup** using the name of the resource group you created or viewed earlier in this lab using the following command:
+1. 次のコマンドを使用して、このラボで先ほど作成または確認したリソース グループ名で **resourceGroup** という新しい変数を作成してください。
 
     ```
     $resourceGroup="<resource-group-name>"
     ```
 
-    > &#128221; For example, if your resource group is named **dp420**, the command will be **$resourceGroup="dp420"**.
+    >**Note**: たとえばリソース グループ名が **DP-420-xxxxx** の場合、コマンドは **$resourceGroup="DP-420-xxxxx"** になります。
 
-1. Use the **echo** cmdlet to write the value of the **$accountName** and **$resourceGroup** variables to the terminal output using the following command:
+1. 次のコマンドを使用して **echo** コマンドレットを実行し、**$accountName** と **$resourceGroup** の値をターミナル出力に表示してください。
 
     ```
     echo $accountName
     echo $resourceGroup
     ```
 
-1. View the options for **az cosmosdb create** using the following command:
+1. 次のコマンドを使用して **az cosmosdb create** のオプションを確認してください。
 
     ```
     az cosmosdb create --help
     ```
 
-1. Create a new Azure Cosmos DB account using the predefined variables and the following command:
+1. 次のコマンドと事前定義した変数を使用して、新しい Azure Cosmos DB アカウントを作成してください。
 
     ```
     az cosmosdb create --name $accountName --resource-group $resourceGroup
     ```
 
-1. Wait for the **create** command to finish execution and return before proceeding forward with this lab.
+1. このラボを続行する前に、**create** コマンドの実行が完了して戻るまで待機してください。
 
-    > &#128161; The **create** command can take anywhere from two to twelve minutes to complete, on average.
+    >**Note**: **create** コマンドの完了には平均で 2〜12 分かかる場合があります。
 
-## Create Azure Cosmos DB SQL API resources using the Azure CLI
+### タスク 3: Azure CLI を使用して Azure Cosmos DB for NoSQL リソースを作成する
 
-The **cosmosdb sql** command group contains commands for managing SQL API-specific resources for Azure Cosmos DB. You can always use the **--help** flag to review the options for these command groups.
+**cosmosdb sql** コマンド グループには、Azure Cosmos DB の API for NoSQL 固有リソースを管理するためのコマンドが含まれています。これらのコマンド グループのオプションは **--help** フラグでいつでも確認できます。
 
-1. Return to the terminal instance already open within **Visual Studio Code**.
+1. **Visual Studio Code** で既に開いているターミナルに戻ってください。
 
-1. View the most command Azure CLI command groups related to **Azure Cosmos DB SQL API** using the following command:
+1. 次のコマンドを使用して、**Azure Cosmos DB for NoSQL** に関連する主な Azure CLI コマンド グループを確認してください。
 
     ```
     az cosmosdb sql --help
     ```
 
-1. View the Azure CLI commands for managing **Azure Cosmos DB SQL API** databases using the following command:
+1. 次のコマンドを使用して、**Azure Cosmos DB for NoSQL** のデータベース管理用 Azure CLI コマンドを確認してください。
 
     ```
     az cosmosdb sql database --help
     ```
 
-1. Create a new Azure Cosmos DB database using the predefined variables, the database name **cosmicworks**, and the following command:
+1. 次のコマンド、事前定義した変数、およびデータベース名 **cosmicworks** を使用して、新しい Azure Cosmos DB データベースを作成してください。
 
     ```
     az cosmosdb sql database create --name "cosmicworks" --account-name $accountName --resource-group $resourceGroup
     ```
 
-1. Wait for the **create** command to finish execution and return before proceeding forward with this lab.
+1. このラボを続行する前に、**create** コマンドの実行が完了して戻るまで待機してください。
 
-1. View the Azure CLI commands for managing **Azure Cosmos DB SQL API** containers using the following command:
+1. 次のコマンドを使用して、**Azure Cosmos DB for NoSQL** のコンテナー管理用 Azure CLI コマンドを確認してください。
 
     ```
     az cosmosdb sql container --help
     ```
 
-1. Create a new Azure Cosmos DB container using the predefined variables, the database name **cosmicworks**, the container name **products**,  and the following command:
+1. 次のコマンドと事前定義した変数、データベース名 **cosmicworks**、コンテナー名 **products** を使用して、新しい Azure Cosmos DB コンテナーを作成してください。
 
     ```
     az cosmosdb sql container create --name "products" --throughput 400 --partition-key-path "/categoryId" --database-name "cosmicworks" --account-name $accountName --resource-group $resourceGroup
     ```
 
-1. Wait for the **create** command to finish execution and return before proceeding forward with this lab.
+1. このラボを続行する前に、**create** コマンドの実行が完了して戻るまで待機してください。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab with the **csms** prefix.
+1. **Resource groups** を選択し、このラボで先ほど作成または確認したリソース グループを選択してから、**csms** プレフィックスでこのラボ中に作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で **Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**API for NoSQL** ナビゲーション ツリー内に新しい **products** コンテナー ノードがあることを確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **Scale & Settings**.
+1. **API for NoSQL** ナビゲーション ツリーで **products** コンテナー ノードを選択し、**Scale & Settings** を選択してください。
 
-1. Observe the values within the **Scale** tab. Specifically, observe that the **Manual** option is selected in the **Throughput** section and that the provisioned throughput is set to **400** RU/s.
+1. **Scale** タブの値を確認してください。特に、**Throughput** セクションで **Manual** オプションが選択され、プロビジョニング済みスループットが **400** RU/s に設定されていることを確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Adjust the throughput of an existing container using the Azure CLI
+### タスク 4: Azure CLI を使用して既存コンテナーのスループットを調整する
 
-The Azure CLI can be used to migrate a container between manual and autoscale provisioning of throughput. If the container is using autoscale throughput, the CLI can be used to dynamically adjust the maximum allowed throughput value.
+Azure CLI は、コンテナーのスループットを manual と autoscale の間で移行するために使用できます。コンテナーが autoscale スループットを使用している場合、CLI を使って許可される最大スループット値を動的に調整できます。
 
-1. Return to the terminal instance already open within **Visual Studio Code**.
+1. **Visual Studio Code** で既に開いているターミナルに戻ってください。
 
-1. View the Azure CLI commands for managing **Azure Cosmos DB SQL API** container throughput using the following command:
+1. 次のコマンドを使用して、**Azure Cosmos DB for NoSQL** のコンテナー スループット管理用 Azure CLI コマンドを確認してください。
 
     ```
     az cosmosdb sql container throughput --help
     ```
 
-1. Migrate the **products** container throughput from manual provisioning to autoscale using the following command:
+1. 次のコマンドを使用して、**products** コンテナーのスループットを manual プロビジョニングから autoscale へ移行してください。
 
     ```
     az cosmosdb sql container throughput migrate --name "products" --throughput-type autoscale --database-name "cosmicworks" --account-name $accountName --resource-group $resourceGroup
     ```
 
-1. Wait for the **migrate** command to finish execution and return before proceeding forward with this lab.
+1. このラボを続行する前に、**migrate** コマンドの実行が完了して戻るまで待機してください。
 
-1. Query the the **products** container to determine the minimum possible throughput value using the following command:
+1. 次のコマンドを使用して **products** コンテナーを問い合わせ、最小可能スループット値を確認してください。
 
     ```
     az cosmosdb sql container throughput show --name "products" --query "resource.minimumThroughput" --output "tsv" --database-name "cosmicworks" --account-name $accountName --resource-group $resourceGroup
     ```
 
-1. Update the maximum autoscale throughput of the **products** container from the default value of **4,000** to a new value of **5,000** using the following command:
+1. 次のコマンドを使用して、**products** コンテナーの autoscale 最大スループットを既定値 **4,000** から新しい値 **5,000** に更新してください。
 
     ```
     az cosmosdb sql container throughput update --name "products" --max-throughput 5000 --database-name "cosmicworks" --account-name $accountName --resource-group $resourceGroup
     ```
 
-1. Wait for the **update** command to finish execution and return before proceeding forward with this lab.
+1. このラボを続行する前に、**update** コマンドの実行が完了して戻るまで待機してください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab with the **csms** prefix.
+1. **Resource groups** を選択し、このラボで先ほど作成または確認したリソース グループを選択してから、**csms** プレフィックスでこのラボ中に作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で **Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**API for NoSQL** ナビゲーション ツリー内に新しい **products** コンテナー ノードがあることを確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **Scale & Settings**.
+1. **API for NoSQL** ナビゲーション ツリーで **products** コンテナー ノードを選択し、**Scale & Settings** を選択してください。
 
-1. Observe the values within the **Scale** tab. Specifically, observe that the **Autoscale** option is selected in the **Throughput** section and that the provisioned throughput is set to **5,000** RU/s.
+1. **Scale** タブの値を確認してください。特に、**Throughput** セクションで **Autoscale** オプションが選択され、プロビジョニング済みスループットが **5,000** RU/s に設定されていることを確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
 [docs.microsoft.com/powershell/module/microsoft.powershell.utility/get-random]: https://docs.microsoft.com/powershell/module/microsoft.powershell.utility/get-random
+
+### レビュー
+
+このラボでは、次を完了しました。
+
+- Azure CLI にログインした。
+- Azure CLI を使用して Azure Cosmos DB アカウントを作成した。
+- Azure CLI を使用して Azure Cosmos DB for NoSQL リソースを作成した。
+- Azure CLI を使用して既存コンテナーのスループットを調整した。
+
+### ラボは正常に完了しました
