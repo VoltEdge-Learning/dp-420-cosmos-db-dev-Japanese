@@ -1,122 +1,122 @@
 ---
 lab:
-    title: 'Review the default index policy for an Azure Cosmos DB SQL API container with the portal'
-    module: 'Module 6 - Define and implement an indexing strategy for Azure Cosmos DB SQL API'
+    title: 'ポータルを使用して Azure Cosmos DB SQL API コンテナーの既定のインデックス ポリシーを確認する'
+    module: 'モジュール 6 - Azure Cosmos DB SQL API のインデックス戦略を定義して実装する'
 ---
 
-# Review the default index policy for an Azure Cosmos DB SQL API container with the portal
+# ポータルを使用して Azure Cosmos DB SQL API コンテナーの既定のインデックス ポリシーを確認する
 
-Every container in Azure Cosmos DB has an indexing policy that directs the service on how to index items within the container. By default, this indexing policy indexes every property of every item. The default indexing policy makes it easy to get started with Azure Cosmos DB quickly as you don't have to think about indexing, performance, and management at the start of a project.
+Azure Cosmos DB のすべてのコンテナーには、コンテナー内の項目をどのようにインデックス化するかをサービスに指示するインデックス ポリシーがあります。既定では、このインデックス ポリシーはすべての項目のすべてのプロパティをインデックス化します。既定のインデックス ポリシーにより、プロジェクトの開始時にインデックス、パフォーマンス、管理について考える必要がないため、Azure Cosmos DB をすばやく使い始めることができます。
 
-In this lab, you'll observe and manipulate the default index policy for a few containers using the Data Explorer.
+このラボでは、Data Explorer を使用して、いくつかのコンテナーの既定のインデックス ポリシーを確認し、変更します。
 
-## Create an Azure Cosmos DB SQL API account
+## Azure Cosmos DB SQL API アカウントを作成する
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you will select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key and use them to connect to the Azure Cosmos DB SQL API account using the Azure SDK for .NET or any other SDK of your choice.
+Azure Cosmos DB は、複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングするときは、アカウントでサポートする API（たとえば **Mongo API** や **SQL API**）を選択します。Azure Cosmos DB SQL API アカウントのプロビジョニングが完了したら、エンドポイントとキーを取得し、それらを使用して Azure SDK for .NET または任意の SDK から Azure Cosmos DB SQL API アカウントに接続できます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか新規作成する* |
+    | **Account Name** | *グローバルで一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Seed the Azure Cosmos DB SQL API account with data
+## Azure Cosmos DB SQL API アカウントにデータをシードする
 
-The [cosmicworks][nuget.org/packages/cosmicworks] command-line tool deploys sample data to any Azure Cosmos DB SQL API account. The tool is open-source and available through NuGet. You will install this tool to the Azure Cloud Shell and then use it to seed your database.
+[cosmicworks][nuget.org/packages/cosmicworks] コマンドライン ツールは、任意の Azure Cosmos DB SQL API アカウントにサンプル データをデプロイします。このツールはオープンソースで、NuGet から利用できます。このツールを Azure Cloud Shell にインストールし、データベースのシードに使用します。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動してください。
 
-1. In **Visual Studio Code**, open the **Terminal** menu and then select **New Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **Terminal** メニューを開き、**New Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code のインターフェイスにまだ慣れていない場合は、[Visual Studio Code の Get Started ガイド][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. Install the [cosmicworks][nuget.org/packages/cosmicworks] command-line tool for global use on your machine.
+1. [cosmicworks][nuget.org/packages/cosmicworks] コマンドライン ツールを、マシン全体で使用できるようにインストールしてください。
 
     ```
     dotnet tool install --global cosmicworks
     ```
   
-    > &#128161; This command may take a couple of minutes to complete. This command will output the warning message (*Tool 'cosmicworks' is already installed') if you have already installed the latest version of this tool in the past.
+    > &#128161; このコマンドの完了には数分かかる場合があります。過去にこのツールの最新バージョンをすでにインストールしている場合、このコマンドは警告メッセージ（*Tool 'cosmicworks' is already installed'）を出力します。
 
-1. Run cosmicworks to seed your Azure Cosmos DB account with the following command-line options:
+1. 次のコマンドライン オプションを使用して cosmicworks を実行し、Azure Cosmos DB アカウントをシードしてください。
 
     | **Option** | **Value** |
     | ---: | :--- |
-    | **--endpoint** | *The endpoint value you copied earlier in this lab* |
-    | **--key** | *The key value you coped earlier in this lab* |
+    | **--endpoint** | *このラボの前半でコピーした endpoint 値* |
+    | **--key** | *このラボの前半でコピーした key 値* |
     | **--datasets** | *product* |
 
     ```
     cosmicworks --endpoint <cosmos-endpoint> --key <cosmos-key> --datasets product
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/** and your key is: **fDR2ci9QgkdkvERTQ==**, then the command would be:
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** で、key が **fDR2ci9QgkdkvERTQ==** の場合、コマンドは次のようになります:
     > ``cosmicworks --endpoint https://dp420.documents.azure.com:443/ --key fDR2ci9QgkdkvERTQ== --datasets product``
 
-1. Wait for the **cosmicworks** command to finish populating the account with a database, container, and items.
+1. **cosmicworks** コマンドが、アカウントへのデータベース、コンテナー、および項目の追加を完了するまで待機してください。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## View and manipulate the default indexing policy
+## 既定のインデックス ポリシーを表示して変更する
 
-When a container is created by code, portal, or a tool; the indexing policy is set to an intelligent default if you do not specify it otherwise. You will observe that default indexing policy and make a change to the policy.
+コード、ポータル、またはツールでコンテナーを作成した場合、明示的に指定しなければインデックス ポリシーは適切な既定値に設定されます。この既定のインデックス ポリシーを確認し、ポリシーに変更を加えます。
 
-1. In a web browser, navigate to the Azure portal (``portal.azure.com``).
+1. Web ブラウザーで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、次にこのラボで先ほど作成または確認したリソース グループを選択し、さらにこのラボで作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**SQL API** ナビゲーション ツリー内の新しい **products** コンテナー ノードを確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **New SQL Query**.
+1. **SQL API** ナビゲーション ツリー内の **products** コンテナー ノードを選択し、**New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return all documents where the **name** is equivalent to **HL Headset**:
+1. **name** が **HL Headset** と等しいすべてのドキュメントを返す新しい SQL クエリを作成してください。
 
     ```
     SELECT * FROM p WHERE p.name = 'HL Headset'
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results of the query.
+1. クエリ結果を確認してください。
 
-1. In the **Query** tab, select **Query Stats**.
+1. **Query** タブで **Query Stats** を選択してください。
 
-1. Still in the **Query** tab, observe the value of the **Request Charge** field within the **Query Statistics** section.
+1. **Query** タブで、**Query Statistics** セクション内の **Request Charge** フィールドの値を確認してください。
 
-    > &#128221; All paths are currently indexed, so this query should be relatively efficient.
+    > &#128221; 現在はすべてのパスがインデックス化されているため、このクエリは比較的効率的であるはずです。
 
-1. Within the **products** container node of the **SQL API** navigation tree, select **Scale & Settings**.
+1. **SQL API** ナビゲーション ツリーの **products** コンテナー ノード内で、**Scale & Settings** を選択してください。
 
-1. Observe the default indexing policy within the **Indexing Policy** section:
+1. **Indexing Policy** セクション内の既定のインデックス ポリシーを確認してください。
 
     ```
     {
@@ -135,9 +135,9 @@ When a container is created by code, portal, or a tool; the indexing policy is s
     }
     ```
 
-    > &#128221; This default policy will index all possible paths with the exception of **_etag**.
+    > &#128221; この既定ポリシーは、**_etag** を除くすべての可能なパスをインデックス化します。
 
-1. Within the editor, replace the content of the indexing policy to only index the **/price** path:
+1. エディター内でインデックス ポリシーの内容を置き換え、**/price** パスのみをインデックス化するようにしてください。
 
     ```
     {
@@ -156,43 +156,43 @@ When a container is created by code, portal, or a tool; the indexing policy is s
     }
     ```
 
-1. Select **Save** to persist your changes.
+1. 変更を保存するために **Save** を選択してください。
 
-1. Select **New SQL Query**.
+1. **New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return all documents where the **name** is equivalent to **HL Headset**:
+1. **name** が **HL Headset** と等しいすべてのドキュメントを返す新しい SQL クエリを作成してください。
 
     ```
     SELECT * FROM p WHERE p.name = 'HL Headset'
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results of the query.
+1. クエリ結果を確認してください。
 
-1. In the **Query** tab, select **Query Stats**.
+1. **Query** タブで **Query Stats** を選択してください。
 
-1. Still in the **Query** tab, observe the value of the **Request Charge** field within the **Query Statistics** section.
+1. **Query** タブで、**Query Statistics** セクション内の **Request Charge** フィールドの値を確認してください。
 
-    > &#128221; Now that the **name** property is not indexed, the request charge has increased.
+    > &#128221; **name** プロパティがインデックス化されなくなったため、要求料金が増加しています。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return all documents where the **price** is greater than **$3,000**:
+1. **price** が **$3,000** より大きいすべてのドキュメントを返す新しい SQL クエリを作成してください。
 
     ```
     SELECT * FROM p WHERE p.price > 3000
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results of the query.
+1. クエリ結果を確認してください。
 
-1. In the **Query** tab, select **Query Stats**.
+1. **Query** タブで **Query Stats** を選択してください。
 
-1. Still in the **Query** tab, observe the value of the **Request Charge** field within the **Query Statistics** section.
+1. **Query** タブで、**Query Statistics** セクション内の **Request Charge** フィールドの値を確認してください。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [nuget.org/packages/cosmicworks]: https://www.nuget.org/packages/cosmicworks/
