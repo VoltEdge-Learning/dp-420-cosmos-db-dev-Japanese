@@ -1,141 +1,162 @@
----
-lab:
-    title: 'Optimize an Azure Cosmos DB SQL API container indexing policy for a query'
-    module: 'Module 10 - Optimize query performance in Azure Cosmos DB SQL API'
----
+# Lab 10b - Azure Cosmos DB for NoSQL でクエリ パフォーマンスを最適化する
 
-# Optimize an Azure Cosmos DB SQL API container's indexing policy for a query
+## ラボ シナリオ
 
-When planning for an Azure Cosmos DB SQL API account, knowing our most popular queries can help us tune the indexing policy so that queries are as performant as possible.
+Azure Cosmos DB for NoSQL アカウントを設計する際、最もよく使われるクエリを把握しておくことで、クエリ パフォーマンスを最大化できるようにインデックス作成ポリシーを調整しやすくなります。
 
-In this lab, we will use the Data Explorer to test SQL queries with the default indexing policy and an indexing policy that includes a composite index.
+このラボでは、Data Explorer を使用して、既定のインデックス作成ポリシーと、複合インデックスを含むインデックス作成ポリシーで SQL クエリをテストします。
 
-## Create an Azure Cosmos DB SQL API account
+## ラボの目的
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you will select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key and use them to connect to the Azure Cosmos DB SQL API account using the Azure SDK for .NET or any other SDK of your choice.
+このラボでは、次のタスクを完了します。
+- タスク 1: Azure Cosmos DB for NoSQL アカウントを作成する。
+- タスク 2: Azure Cosmos DB for NoSQL アカウントにサンプル データをシードする。
+- タスク 3: SQL クエリを実行し、要求ユニット課金を測定する。
+- タスク 4: インデックス作成ポリシーに複合インデックスを作成する。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+## 推定所要時間: 60 分
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+## アーキテクチャ図
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+![image](architecturedia/lab24.png)
+
+## 演習 1: クエリ向けに Azure Cosmos DB for NoSQL コンテナーのインデックス作成ポリシーを最適化する
+
+### タスク 1: Azure Cosmos DB for NoSQL アカウントを作成する
+
+Azure Cosmos DB は複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングするときは、アカウントでサポートする API（例: **API for MongoDB** または **API for NoSQL**）を選択します。Azure Cosmos DB for NoSQL アカウントのプロビジョニング完了後、エンドポイントとキーを取得し、Azure SDK for .NET または任意の SDK を使用して Azure Cosmos DB for NoSQL アカウントに接続できます。
+
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
+
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
+
+1. **Azure services** カテゴリで **Create a resource** を選択し、次に **Azure Cosmos DB** を選択してください。
+
+    > &#128161; 別の方法として、**&#8801;** メニューを展開し、**All Services** を選択して、**Databases** カテゴリの **Azure Cosmos DB** を選択し、**Create** を選択してください。
+
+1. **Select API option** ペインで、**Azure Cosmos DB for NoSQL** セクション内の **Create** オプションを選択してください。
+
+1. **Create Azure Cosmos DB Account** ペインで **Basics** タブを確認してください。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | --- | --- |
     | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
+    | **Resource group** | *DP-420-DeploymentID* |
     | **Account Name** | *Enter a globally unique name* |
     | **Location** | *Choose any available region* |
     | **Capacity mode** | *Serverless* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
 
-1. Wait for the deployment task to complete before continuing with this task.
+    >**Note** : DeploymentID は各環境に関連付けられた一意の ID です。値は environment details ページで確認できます。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Data Explorer** pane.
+1. **Review + Create** をクリックし、検証で Success が表示されたら **Create** をクリックしてください。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. このタスクを続行する前に、デプロイが完了するまで待機してください。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Data Explorer** ペインに移動してください。
+
+1. **Data Explorer** ペインで **New Container** を選択してください。
+
+1. **New Container** ポップアップで各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *Create new* &vert; *cosmicworks* |
     | **Container id** | *products* |
     | **Partition key** | */categoryId* |
 
-1. Back in the **Data Explorer** pane, expand the **cosmicworks** database node and then observe the **products** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**cosmicworks** データベース ノードを展開して、階層内の **products** コンテナー ノードを確認してください。
 
-1. In the resource blade, navigate to the **Keys** pane.
+1. リソース ブレードで **Keys** ペインに移動してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続情報と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Seed your Azure Cosmos DB SQL API account with sample data
+### タスク 2: Azure Cosmos DB for NoSQL アカウントにサンプル データをシードする
 
-You will use a command-line utility that creates a **cosmicworks** database and a **products** container. The tool will then create a set of items that you will observe using the change feed processor running in your terminal window.
+**cosmicworks** データベースと **products** コンテナーを作成するコマンドライン ユーティリティを使用します。次に、このツールで複数のアイテムを作成し、ターミナルで実行中の変更フィード プロセッサを使ってそれらを確認します。
 
-1. In **Visual Studio Code**, open the **Terminal** menu and then select **Split Terminal** to open a new terminal side by side with your existing instance.
+1. **Visual Studio Code** で **Terminal** メニューを開き、**Split Terminal** を選択して、既存インスタンスと並べて新しいターミナルを開いてください。
 
-1. Install the [cosmicworks][nuget.org/packages/cosmicworks] command-line tool for global use on your machine.
+1. マシン全体で使用できるように [cosmicworks][nuget.org/packages/cosmicworks] コマンドライン ツールをインストールしてください。
 
     ```
     dotnet tool install --global cosmicworks
     ```
 
-    > &#128161; This command may take a couple of minutes to complete. This command will output the warning message (*Tool 'cosmicworks' is already installed') if you have already installed the latest version of this tool in the past.
+    > **Note:** このコマンドは完了までに数分かかる場合があります。過去にこのツールの最新バージョンをインストール済みの場合、警告メッセージ（*Tool 'cosmicworks' is already installed*）が表示されます。
 
-1. Run cosmicworks to seed your Azure Cosmos DB account with the following command-line options:
+1. 次のコマンドライン オプションを使用して cosmicworks を実行し、Azure Cosmos DB アカウントにデータをシードしてください。
 
     | **Option** | **Value** |
-    | ---: | :--- |
-    | **--endpoint** | *The endpoint value you copied earlier in this lab* |
-    | **--key** | *The key value you coped earlier in this lab* |
+    | --- | --- |
+    | **--endpoint** | *このラボで先ほどコピーした endpoint 値* |
+    | **--key** | *このラボで先ほどコピーした key 値* |
     | **--datasets** | *product* |
 
     ```
     cosmicworks --endpoint <cosmos-endpoint> --key <cosmos-key> --datasets product
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/** and your key is: **fDR2ci9QgkdkvERTQ==**, then the command would be:
+    > **Note:** たとえば endpoint が **https&shy;://dp420.documents.azure.com:443/**、key が **fDR2ci9QgkdkvERTQ==** の場合、コマンドは次のようになります。
     > ``cosmicworks --endpoint https://dp420.documents.azure.com:443/ --key fDR2ci9QgkdkvERTQ== --datasets product``
 
-1. Wait for the **cosmicworks** command to finish populating the account with a database, container, and items.
+1. **cosmicworks** コマンドが、データベース、コンテナー、アイテムの作成を完了するまで待機してください。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## Execute SQL queries and measure their request unit charge
+### タスク 3: SQL クエリを実行し、要求ユニット課金を測定する
 
-Before you modify the indexing policy, first, you will run a few sample SQL queries to get a baseline request unit charge expressed in RUs.
+インデックス作成ポリシーを変更する前に、まずサンプル SQL クエリをいくつか実行して、RU で表される要求ユニット課金のベースラインを取得します。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、このラボで先ほど作成または確認したリソース グループを選択してから、このラボで作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で **Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, select the **products** container node, and then select **New SQL Query**.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを選択して、**New SQL Query** を選択してください。
 
-1. Select **Execute Query** to run the default query:
+1. **Execute Query** を選択して既定クエリを実行してください。
 
     ```
     SELECT * FROM c
     ```
 
-1. Observe the results of the query. Select **Query Stats** to view the request unit charge in RUs.
+1. クエリ結果を確認してください。**Query Stats** を選択し、RU で要求ユニット課金を確認してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return all documents where the **name** is equivalent to **HL Headset**:
+1. **name** が **HL Headset** に等しいすべてのドキュメントを返す新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
     FROM
-        products p    
+        products p
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results and stats of the query. The request unit charge is almost the same as the first query.
+1. クエリ結果と統計を確認してください。要求ユニット課金は最初のクエリとほぼ同じです。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return all documents where the **name** is equivalent to **HL Headset**:
+1. **name** が **HL Headset** に等しいすべてのドキュメントを返す新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
@@ -145,22 +166,22 @@ Before you modify the indexing policy, first, you will run a few sample SQL quer
         p.categoryName DESC
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results and stats of the query. The request unit charge has increased due to the **ORDER BY** clause.
+1. クエリ結果と統計を確認してください。**ORDER BY** 句により要求ユニット課金が増加しています。
 
-## Create a composite index in the indexing policy
+### タスク 4: インデックス作成ポリシーに複合インデックスを作成する
 
-Now, you will need to create a composite index if you sort your items using multiple properties. In this task, you will create a composite index to sort items by their categoryName, and then their actual name.
+複数プロパティを使用してアイテムを並べ替える場合は、複合インデックスを作成する必要があります。このタスクでは、categoryName で並べ替えた後に実際の name で並べ替えるための複合インデックスを作成します。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, select the **products** container node, and then select **New SQL Query**.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを選択して、**New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will order the results by the **categoryName** in descending order first, and then by the **price** in ascending order:
+1. まず **categoryName** の降順、次に **price** の昇順で結果を並べ替える新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
@@ -171,15 +192,15 @@ Now, you will need to create a composite index if you sort your items using mult
         p.price ASC
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. The query should fail with the error **The order by query does not have a corresponding composite index that it can be served from**.
+1. クエリは **The order by query does not have a corresponding composite index that it can be served from** というエラーで失敗するはずです。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, expand the **products** container node, and then select **Settings**.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを展開して、**Settings** を選択してください。
 
-1. In the **Settings** tab, navigate to the **Indexing Policy** section.
+1. **Settings** タブで **Indexing Policy** セクションに移動してください。
 
-1. Observe the default indexing policy:
+1. 既定のインデックス作成ポリシーを確認してください。
 
     ```
     {
@@ -195,10 +216,10 @@ Now, you will need to create a composite index if you sort your items using mult
           "path": "/\"_etag\"/?"
         }
       ]
-    }    
+    }
     ```
 
-1. Replace the indexing policy with this modified JSON object and then **Save** the changes:
+1. インデックス作成ポリシーを次の変更済み JSON オブジェクトに置き換え、変更を **Save** してください。
 
     ```
     {
@@ -225,14 +246,14 @@ Now, you will need to create a composite index if you sort your items using mult
     }
     ```
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, select the **products** container node, and then select **New SQL Query**.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを選択して、**New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will order the results by the **categoryName** in descending order first, and then by the **price** in ascending order:
+1. まず **categoryName** の降順、次に **price** の昇順で結果を並べ替える新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
@@ -243,16 +264,16 @@ Now, you will need to create a composite index if you sort your items using mult
         p.price ASC
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results and stats of the query. The request unit charge should be smaller now that the composite index is in place.
+1. クエリ結果と統計を確認してください。複合インデックスが適用されたため、要求ユニット課金は小さくなるはずです。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will order the results by the **categoryName** in descending order first, then by **name** in ascending order, and then finally by the **price** in ascending order:
+1. まず **categoryName** の降順、次に **name** の昇順、最後に **price** の昇順で結果を並べ替える新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
@@ -264,15 +285,15 @@ Now, you will need to create a composite index if you sort your items using mult
         p.price ASC
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results and stats of the query. The request unit charge is higher again because of the complexity of the query and the lack of a supporting composite index.
+1. クエリは **The order by query does not have a corresponding composite index that it can be served from** というエラーで失敗するはずです。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, expand the **products** container node, and then select **Settings** again.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを展開して、再度 **Settings** を選択してください。
 
-1. In the **Settings** tab, navigate to the **Indexing Policy** section.
+1. **Settings** タブで **Indexing Policy** セクションに移動してください。
 
-1. Replace the indexing policy with this modified JSON object and then **Save** the changes:
+1. インデックス作成ポリシーを次の変更済み JSON オブジェクトに置き換え、変更を **Save** してください。
 
     ```
     {
@@ -313,14 +334,14 @@ Now, you will need to create a composite index if you sort your items using mult
     }
     ```
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, select the **products** container node, and then select **New SQL Query**.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを選択して、**New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will order the results by the **categoryName** in descending order first, then by **name** in ascending order, and then finally by the **price** in ascending order:
+1. まず **categoryName** の降順、次に **name** の昇順、最後に **price** の昇順で結果を並べ替える新しい SQL クエリを作成してください。
 
     ```
-    SELECT 
+    SELECT
         p.name,
         p.categoryName,
         p.price
@@ -332,10 +353,19 @@ Now, you will need to create a composite index if you sort your items using mult
         p.price ASC
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the results and stats of the query. The request unit charge should be lower now that a composite index is in place.
+1. クエリ結果と統計を確認してください。複合インデックスが適用されたため、要求ユニット課金は低くなるはずです。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-[code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
+### レビュー
+
+このラボでは、次を完了しました。
+
+- Azure Cosmos DB for NoSQL アカウントを作成した。
+- Azure Cosmos DB for NoSQL アカウントにサンプル データをシードした。
+- SQL クエリを実行し、要求ユニット課金を測定した。
+- インデックス作成ポリシーに複合インデックスを作成した。
+
+### ラボは正常に完了しました
