@@ -1,189 +1,256 @@
----
-lab:
-    title: 'Use Azure Monitor to analyze an Azure Cosmos DB SQL API account'
-    module: 'Module 11 - Monitor and troubleshoot an Azure Cosmos DB SQL API solution'
----
+# Azure Monitor を使用して Azure Cosmos DB for NoSQL アカウントを分析する
 
-# Use Azure Monitor to analyze an Azure Cosmos DB SQL API account
+## ラボ シナリオ
 
-Azure Monitor is a full stack monitoring service in Azure that provides a complete set of features to monitor Azure resources.  Azure Cosmos DB creates monitoring data using Azure Monitor.  Azure Monitor captures Cosmos DB's metrics and telemetry data.
+Azure Monitor は Azure リソースを監視するための機能を包括的に提供する Azure のフルスタック監視サービスです。Azure Cosmos DB は Azure Monitor を使用して監視データを生成します。Azure Monitor は Cosmos DB のメトリックとテレメトリ データを取得します。
 
-In this lab, you'll run a simulated workload against Azure Cosmos DB containers and analyze how that workload affects the Azure Cosmos DB account.
+このラボでは、Azure Cosmos DB コンテナーに対してシミュレートされたワークロードを実行し、そのワークロードが Azure Cosmos DB アカウントに与える影響を分析します。
 
-## Prepare your development environment
+## ラボの目的
 
-If you haven't already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボでは、次のタスクを完了します。
+- タスク 1: 開発環境を準備する。
+- タスク 2: Azure Cosmos DB for NoSQL アカウントを作成する。
+- タスク 3: .NET スクリプトに Microsoft.Azure.Cosmos と Newtonsoft.Json ライブラリをインポートする。
+- タスク 4: コンテナーとワークロードを作成するスクリプトを実行する。
+- タスク 5: Azure Monitor を使用して Azure Cosmos DB アカウント使用状況を分析する。
 
-1. Start **Visual Studio Code**.
+## 推定所要時間: 30 分
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+## アーキテクチャ図
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+![image](architecturedia/lab25.png)
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+### タスク 1: 開発環境を準備する
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+このタスクでは、Visual Studio Code で開発環境をセットアップします。
 
-## Create an Azure Cosmos DB SQL API account
+1. Visual Studio Code を起動してください（プログラム アイコンはデスクトップにピン留めされています）。
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you'll select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key. Use the endpoint and key to connect to the Azure Cosmos DB SQL API account programatically. Use the endpoint and key on the connection strings of the Azure SDK for .NET or any other SDK.
+   ![Visual Studio Code Icon](./media/vscode1.jpg)
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+2. 左側ペインの **Extension (1)** アイコンを選択してください。検索バーに **C# (2)** を入力し、表示された **extension (3)** を選択して、最後に拡張機能の **Install (4)** を選択してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+    ![](media/visualstudioo.png)
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+3. 画面左上の **file** オプションを選択し、メニューから **Open Folder** を選択して **C:\AllFiles** に移動してください。
+
+4. **dp-420-cosmos-db-dev-main** フォルダーを選択し、**Select Folder** をクリックしてください。
+
+    ![](media/lab12-1.png)
+
+    >**Note:** **Do you trust the authors of the files in this folder?** ポップアップが表示されたら、**Yes, I trust the authors** を選択してください。
+
+      ![06](media/lab12-2.png)
+
+### タスク 2: Azure Cosmos DB for NoSQL アカウントを作成する
+
+このタスクでは、NoSQL API を使用して Azure Cosmos DB アカウントを作成します。アカウントのプロビジョニング後、endpoint (URI) と primary key を含む必要な接続情報を取得します。
+
+Azure Cosmos DB は複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングするときは、アカウントでサポートする API（例: **Mongo API** または **NoSQL API**）を選択します。Azure Cosmos DB for NoSQL アカウントのプロビジョニング完了後、エンドポイントとキーを取得し、Azure SDK for .NET または任意の SDK を使用して Azure Cosmos DB for NoSQL アカウントに接続できます。
+
+1. **Azure Portal** に戻ってください。
+
+1. *Azure Cosmos DB (1)* を検索し、**Azure Cosmos DB (2)** を選択してください。
+
+     ![05](media/lab12-3.png)
+
+1. **Azure Cosmos DB** ページで **+ Create** を選択してください。
+
+     ![05](media/lab12-4.png)
+
+1. Create an Azure Cosmos DB account ページで、**Azure Cosmos DB for NoSQL** タブの **Create** を選択してください。
+
+     ![05](media/T2S9.png)
+
+1. **Create Azure Cosmos DB Account** ペインで **Basics** タブを確認してください。
 
     | **Setting** | **Value** |
-    | ---: | :--- |
+    | :--- | :--- |
     | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
+    | **Resource group** | **cosmosdb-<inject key="DeploymentID" enableCopy="false"/>** |
+    | **Account Name** | **cosmosdb-<inject key="DeploymentID" enableCopy="false"/>** |
     | **Location** | *Choose any available region* |
     | **Capacity mode** | *Provisioned throughput* |
     | **Apply Free Tier Discount** | *`Do Not Apply`* |
     | **Limit the total amount of throughput that can be provisioned on this account** | *Uncheck* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+     ![05](media/lab12-6.png)
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. **Review + Create** をクリックし、検証で Success が表示されたら **Create** をクリックしてください。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. このタスクを続行する前に、デプロイが完了するまで待機してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. **Go to resource** をクリックして新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、左メニューの settings から **Keys** ペインに移動してください。
 
-    1. Record the value of the **URI** field. You'll use this **endpoint** value later in this exercise.
+1. このペインには、SDK からアカウントに接続するために必要な接続情報と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **PRIMARY KEY** field. You'll use this **key** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-1. Minimize, but don't close your browser window. We'll come back to the Azure portal a few minutes after we start a background workload in the next steps.
+    1. show primary key アイコンを選択して **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
+1. ブラウザー ウィンドウは閉じずに最小化してください。次の手順でバックグラウンド ワークロードを開始した数分後に Azure portal に戻ります。
 
-## Import the Microsoft.Azure.Cosmos and Newtonsoft.Json libraries into a .NET script
+    > **Congratulations** on completing the lab! Now, it's time to validate it. Here are the steps:
+    > - Hit the Validate button for the corresponding task. If you receive a success message, you have successfully validated the lab.
+    > - If not, carefully read the error message and retry the step, following the instructions in the lab guide.
+    > - If you need any assistance, please contact us at cloudlabs-support@spektrasystems.com. We are available 24/7 to help you out.
 
-The .NET CLI includes an [add package][docs.microsoft.com/dotnet/core/tools/dotnet-add-package] command to import packages from a pre-configured package feed. A .NET installation uses NuGet as its default package feed.
+    <validation step="f7d09acb-1ee3-4b09-97b4-04f9af7a3aa9" />
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **25-monitor** folder.
+### タスク 3: .NET スクリプトに Microsoft.Azure.Cosmos と Newtonsoft.Json ライブラリをインポートする
 
-1. Open the context menu for the **25-monitor** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+このタスクでは、.NET CLI の [add package][docs.microsoft.com/dotnet/core/tools/dotnet-add-package] コマンドを使用して、事前構成済みのパッケージ フィードからパッケージをインポートします。.NET のインストールでは、既定のパッケージ フィードとして NuGet を使用します。
 
-    > &#128221; This command will open the terminal with the starting directory already set to the **25-monitor** folder.
+1. **Visual Studio Code** の **Explorer** ペインで **25-monitor** フォルダーに移動してください。
 
-1. Add the [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] package from NuGet using the following command:
+1. **25-monitor** フォルダーを右クリックし、**Open in Integrated Terminal** を選択して新しいターミナルを開いてください。
+
+    >**Note:** このコマンドを実行すると、開始ディレクトリが **25-monitor** フォルダーに設定された状態でターミナルが開きます。
+
+1. 次のコマンドを実行して、NuGet から [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] パッケージを追加してください。
 
     ```
     dotnet add package Microsoft.Azure.Cosmos --version 3.22.1
     ```
 
-1. Add the [Newtonsoft.Json][nuget.org/packages/Newtonsoft.Json/13.0.1] package from NuGet using the following command:
+1. 次のコマンドを実行して、NuGet から [Newtonsoft.Json][nuget.org/packages/Newtonsoft.Json/13.0.1] パッケージを追加してください。
 
     ```
     dotnet add package Newtonsoft.Json --version 13.0.1
     ```
 
-## Run a script to create the containers and the workload
+### タスク 4: コンテナーとワークロードを作成するスクリプトを実行する
 
-We're now ready to run a workload to monitor its usage of the Azure Cosmos DB Account.  The script we'll be running, behind the scenes. This script will create three containers and load some data into those containers. The script will then run some SQL queries randomly to emulate multiple user applications hitting the Azure Cosmos DB account. 
+このタスクでは、Azure Cosmos DB アカウントを使用してワークロードを作成および監視するスクリプトを実行します。スクリプトは 3 つのコンテナーをセットアップし、データを読み込み、複数ユーザー アプリケーションが SQL クエリでデータベースにアクセスする状況をシミュレートします。これにより、Azure Cosmos DB の使用状況とパフォーマンス メトリックを監視できます。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **25-monitor** folder.
+これで、Azure Cosmos DB Account の使用状況を監視するワークロードを実行する準備が整いました。バックグラウンドで実行されるこのスクリプトは、3 つのコンテナーを作成し、それらにデータを読み込みます。その後、複数ユーザー アプリケーションが Azure Cosmos DB アカウントにアクセスする状況を再現するために、SQL クエリをランダムに実行します。
 
-1. Open the **Program.cs** code file.
+1. **Visual Studio Code** の **Explorer** ペインで **25-monitor** フォルダーに移動してください。
 
-1. Update the existing variable named **endpoint** with its value set to the **endpoint** of the Azure Cosmos DB account you created earlier.
-  
+1. **Program.cs** コード ファイルを開いてください。
+
+1. 既存の **endpoint** という変数を更新し、先ほど作成した Azure Cosmos DB アカウントの **endpoint** を設定してください。
+
     ```
     private static readonly string endpoint = "<cosmos-endpoint>";
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/**, then the C# statement would be: **private static readonly string endpoint = "https&shy;://dp420.documents.azure.com:443/";**.
+    > &#128221; たとえば endpoint が **https&shy;://dp420.documents.azure.com:443/** の場合、C# ステートメントは **private static readonly string endpoint = "https&shy;://dp420.documents.azure.com:443/";** になります。
 
-1. Update the existing variable named **key** with its value set to the **key** of the Azure Cosmos DB account you created earlier.
+1. 既存の **key** という変数を更新し、先ほど作成した Azure Cosmos DB アカウントの **key** を設定してください。
 
     ```
     private static readonly string key = "<cosmos-key>";
     ```
 
-    > &#128221; For example, if your key is: **fDR2ci9QgkdkvERTQ==**, then the C# statement would be: **private static readonly string key = "fDR2ci9QgkdkvERTQ==";**.
+    > &#128221; たとえば key が **fDR2ci9QgkdkvERTQ==** の場合、C# ステートメントは **private static readonly string key = "fDR2ci9QgkdkvERTQ==";** になります。
 
-1. Save the **Program.cs** file.
+1. **Program.cs** ファイルを保存してください。
 
-1. Return to the *Integrated Terminal*.
+1. *Integrated Terminal* に戻ってください。
 
-1. Build and run the project using the [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] command:
+1. [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] コマンドを使用してプロジェクトをビルドおよび実行してください。
 
     ```
     dotnet run
     ```
-    > &#128221; The first part of this script will create the three containers, and load the data into them, this should takes around 2 minutes. To emulate some rate limiting events, the script then sets the provisioned throughput to 400 RU/s. You should then get the message ***Creating simulated background workload, wait 5-10 minutes and go to the next step of the exercise.***. Because Azure resources upload monitoring data to Azure monitor asynchronously, we need to wait a short period of time to start getting some diagnostics data in the Azure Monitor Metrics and Insights. After 5-10 minutes go to the next step. If you want, to collect additional diagnostic data, you do not have to stop the script after 5-10 minutes and just wait until the end of the lab to do so.
+    > &#128221; このスクリプトの前半では 3 つのコンテナーを作成してデータを読み込みます。所要時間は約 2 分です。レート制限イベントを再現するため、スクリプトはその後、プロビジョニング済みスループットを 400 RU/s に設定します。続いて ***Creating simulated background workload, wait 5-10 minutes and go to the next step of the exercise.*** というメッセージが表示されるはずです。Azure リソースは監視データを Azure Monitor に非同期で送信するため、Azure Monitor Metrics と Insights で診断データの取得が始まるまで少し待つ必要があります。5〜10 分後に次のステップへ進んでください。追加の診断データを収集したい場合は、5〜10 分後にスクリプトを停止せず、ラボの最後まで実行し続けてもかまいません。
 
-    > &#128221; You will notice a couple of warnings in yellow since the compiler detects that the script runs many operations synchronously and does not wait for a reply of the operations. You can ignore these warning since that is the expected behaviour to run multiple SQL scripts simultaneously.
+    > &#128221; コンパイラが「スクリプトが多くの操作を同期的に実行し、操作の応答待ちをしていない」ことを検出するため、黄色の警告がいくつか表示されます。これは複数の SQL スクリプトを同時に実行するための想定動作なので、警告は無視して問題ありません。
 
-## Use Azure Monitor to Analyze the Azure Cosmos DB account usage
+    >**Note**: 上記コマンド実行後に Visual Studio Code がクラッシュする場合があります。その場合はコマンドを再実行して次のタスクに進んでください。Visual Studio が 2 回以上クラッシュする場合は、次の手順に従って Visual Studio をアンインストールして再インストールしてください。
 
-In this part of the exercise, we'll go back to the browser and review some of the Azure Monitor Insight and Metric reports.
+      - スタート メニューで **Control Panel** を検索して選択してください。
+      - **Programs** の **Uninstall a program** リンクを選択し、**Microsoft visual studio code (user)** を見つけて右クリックし、**Uninstall** を選択してください。
+      - **Microsoft edge** に戻り、アドレス バーに https://code.visualstudio.com/download と入力して、**Windows** のダウンロード アイコンをクリックしてください。
+      - ダウンロード完了後、ダウンロードしたファイルを開いて Visual Studio Code をインストールしてください。
+      - インストール完了後、Visual Studio Code を開いてステップ 7 を再実行してください。
 
-### Azure Monitor Metrics's reports
+    > **Congratulations** on completing the lab! Now, it's time to validate it. Here are the steps:
+    > - Hit the Validate button for the corresponding task. If you receive a success message, you have successfully validated the lab.
+    > - If not, carefully read the error message and retry the step, following the instructions in the lab guide.
+    > - If you need any assistance, please contact us at cloudlabs-support@spektrasystems.com. We are available 24/7 to help you out.
 
-1. Go back to the opened browser window we minimized earlier. If you closed it, open a new one and go to your Azure Cosmos DB account page under portal.azure.com.
+    <validation step="ff1fcfa9-5e37-4665-85cc-9628e4ffb657" />
 
-1. In the Azure Comsos DB left-hand menu, under *Monitoring*, select **Metrics**. You'll notice that the **Scope** and **Metric Namespace** fields are prepopulated with the correct information. In the following steps, we'll take a look at a few **Metric** options and the *Add filter* and *Apply splitting* features.
 
-1. By default, the *Metrics* section will show us diagnostic information for the last 24 hours. We need to get more granular to look at the metrics during the workload we created in the previous step. On the upper right-hand corner, select the button labeled ***Local time: Last 24 hours (Automatic)***, we'll then get a window with multiple radio button time range options.  Choose the radio button labeled **Last 30 minute**s and select the **Apply** button. If needed, you can get much more granular by choosing the *Custom* radio button and picking a start and end date and time. 
+### タスク 5: Azure Monitor を使用して Azure Cosmos DB アカウント使用状況を分析する
 
-1. Now that we have a good time range for our diagnostic charts, let's take a look at some Metrics. We'll start with a common metric. From the *Metric* pulldown, choose **Total Request Units**. By default this metric will be displayed as the total sum of RUs. Or, you can change the Aggregation pulldown to avg or max. Once you check out those two aggregations, set it back to *Sum* for the following steps.
+このタスクでは、ブラウザーに戻り、Azure Monitor の Insights および Metrics レポートを確認します。
 
-1. This metric gives us a good idea on how many requests units have been used in our Azure Cosmos DB Account. However our current chart, might not help us home in on an issue when we have multiple databases or containers in our account. Let's change that, let's review how our RU consumption was done by Database. In the menu under the char title, select **Apply splitting**, under the **Values** pulldown choose **DatabaseName**, and select anywhere on the chart to accept the changes. A **Split by = DatabaseName** button will now be placed right above the chart. 
+#### サブタスク 1: Azure Monitor Metrics レポート
 
-1. Much better, now we know which database is doing most of the work. While this information is good, we have no idea which container is doing all the work.  Select the **Split by = DatabaseName** button to change the Split condition and choose **CollectionName** from the *Values* pulldown. Great, we now should have data for our **customer** and **salesOrder** collections. There's only one problem with this chart, the **salesOrder** collection exists in two databases **database-v2** and **database-v3**, so this value is an aggregation of that collection name in both databases.
+1. 先ほど最小化したブラウザー ウィンドウに戻ってください。閉じた場合は新しく開き、[Azure Portal](portal.azure.com) の Azure Cosmos DB アカウント ページに移動してください。
 
-1. It should be an easy fix, select the **Add filter** button, under the *Property* Pulldown choose **DatabaseName**, and under *Values* choose **database-V3**.
+1. Azure Cosmos DB の左メニューで *Monitoring* の **Metrics** を選択してください。**Scope** と **Metric Namespace** フィールドには正しい情報が事前入力されています。以降の手順では、いくつかの **Metric** オプションと、*Add filter*、*Apply splitting* 機能を確認します。
 
-1. Let's look at two more metrics. We'll edit the existing chart, you can also create a new chart if you like. Above the chart, select the button with the *Azure Cosmos DB account name* and the **Total Request Unit** label. Choose **Total Requests** from the *Metric* pulldown, notice that the only aggregation available is *Count*.
+1. 既定では *Metrics* セクションに過去 24 時間の診断情報が表示されます。前のステップで作成したワークロード中のメトリックを確認するため、より細かい時間範囲に変更します。右上の ***Local time: Last 24 hours (Automatic)*** ボタンを選択すると、複数のラジオ ボタン時間範囲オプションが表示されます。**Last 30 minutes** を選択し、**Apply** を選択してください。必要に応じて *Custom* ラジオ ボタンを選び、開始日時と終了日時を指定してさらに細かく設定できます。
 
-1. Two key filters here can help us troubleshoot different types of issues. Let's add a filter with the Property **StatusCode** (notice that a similar filter with a different type of detail would be **Status**), for *Values* pick **200** and **429**. Change the Split to use StatusCode. Notice that there's a huge amount of 429, or rate limiting requests compared to status 200, successful requests. The 429 exceptions happened because the script is sending thousands of requests per second while we set the provisioned throughput to 400 RU/s. *This large number of 429 exceptions compared to successful request, shouldn't be normal on a production environment. In a production environment, 429 exceptions should happen infrequently in a healthy Azure Cosmos DB account*.  You can also use **StautusCode** or **Status** *Properties* in a similar troubleshooting fashion against **Total Request Units**
+1. 診断チャートに適した時間範囲が設定できたので、いくつかの Metrics を確認します。まず一般的なメトリックとして、*Metric* プルダウンから **Total Request Units** を選択してください。既定では RU の合計値として表示されます。Aggregation プルダウンを average や max に変更することもできます。これら 2 つを確認したら、以降の手順のため *Sum* に戻してください。
 
-1. Let's keep on looking ot the **Total Request**, but lets change the split to **OperationType**.  This property will help us determine which read or write operations are doing the bulk of the work. Again, this property could be also used similarly against **Total Request Units**
+1. このメトリックにより、Azure Cosmos DB Account で使用された要求ユニット数の概要が把握できます。ただし、アカウント内に複数のデータベースやコンテナーがある場合、現在のチャートでは問題箇所を特定しにくいことがあります。そこで、データベースごとの RU 消費を確認します。チャート タイトル下のメニューで **Apply splitting** を選択し、**Values** プルダウンで **DatabaseName** を選び、チャート上の任意の場所を選択して変更を確定してください。チャートの直上に **Split by = DatabaseName** ボタンが表示されます。
 
-1. Like we did with the **Total Request Units**, experiment choosing different filters and splitting options. 
+1. これで、どのデータベースが主に処理を行っているかが分かります。ただし、どのコンテナーが主に処理しているかはまだ分かりません。**Split by = DatabaseName** ボタンを選択して Split 条件を変更し、*Values* プルダウンで **CollectionName** を選択してください。これで **customer** と **salesOrder** コレクションのデータが表示されるはずです。ここで 1 つ問題があり、**salesOrder** コレクションは **database-v2** と **database-v3** の 2 つのデータベースに存在するため、この値は両方のデータベースで同名コレクションを集計したものになっています。
 
-1. The final metric we'll look at in this exercise is the **Normalied RU Consumption** metric. Change your split to **PartitionKeyRangeId**. This metric helps us identify which partition key range usage is warmer. The metric gives us the skew of throughput towards a partition key range. Go ahead and choose that Metric from the *Metric* pulldown. This chart should now show us a very unhealthy system, hitting a constant 100% **Normalied RU Consumption**.
+1. これは簡単に修正できます。**Add filter** ボタンを選択し、*Property* プルダウンで **DatabaseName**、*Values* で **database-V3** を選択してください。
 
-> &#128221; If you would like to look at more than one chart at a time, click on the **+ New Chart** option above the chart name. 
+1. さらに 2 つのメトリックを確認します。既存チャートを編集しますが、必要であれば新しいチャートを作成してもかまいません。チャート上部で *Azure Cosmos DB account name* と **Total Request Unit** ラベルが表示されたボタンを選択し、*Metric* プルダウンから **Total Requests** を選択してください。使用可能な集計が *Count* のみであることを確認できます。
 
-> &#128221; While we can not directly save our metrics, you can create or use an existing dashboard and add this chart to it by clicking on the **Pin to dashboard** button on the upper right hand corner of the chart.  Click on th button and choose the **Create new** tab, give it the name *DP-420 labs* and click on **Create and pin**. To view your private dashboards, you should go to the Portal Menu on the upper left hand corner, and choose Dashboard from your you Azure Resource options. The dashboard could take a few minutes to appear the first time.
+1. ここでの 2 つの主要フィルターは、異なる種類の問題のトラブルシューティングに役立ちます。Property に **StatusCode**（詳細粒度が異なる類似フィルターとして **Status** もあります）を追加し、*Values* に **200** と **429** を選択してください。Split を StatusCode に変更してください。status 200（成功要求）に比べて、429（レート制限要求）が非常に多いことが分かります。429 例外が発生したのは、スクリプトが毎秒数千リクエストを送信する一方で、プロビジョニング済みスループットを 400 RU/s に設定していたためです。*成功要求に対して 429 例外がこのように多い状態は、本番環境では通常ではありません。健全な Azure Cosmos DB アカウントでは、本番環境での 429 例外は低頻度であるべきです*。**Total Request Units** に対しても同様に **StatusCode** または **Status** の *Properties* を使ってトラブルシューティングできます。
 
-> &#128221; One more way to share your chart is by clicking on the Share pulldown and downloading it as an Excel file or the Copy link option.
+1. 引き続き **Total Request** を確認し、split を **OperationType** に変更してください。このプロパティを使うと、どの読み取りまたは書き込み操作が処理の大部分を占めているかを判断できます。このプロパティは **Total Request Units** に対しても同様に使用できます。
 
-### Azure Monitor Insights reports
+1. **Total Request Units** のときと同様に、さまざまなフィルターと splitting オプションを試してください。
 
-We might need to spend some time fine-tuning our Azure Monitor Metrics diagnostics reports.  Cosmos DB Insights provide a view of overall performance, failures, and operational health of your Azure Cosmos DB resources. These Insight charts will be pre-built charts similar to the Metric ones. Let's take a look at some of them.
+1. この演習で最後に確認するメトリックは **normalised RU Consumption** です。split を **PartitionKeyRangeId** に変更してください。このメトリックは、どのパーティション キー範囲の使用率が高いかを特定するのに役立ちます。パーティション キー範囲へのスループット偏りを示します。*Metric* プルダウンからこのメトリックを選択してください。チャートには、100% の **Normalied RU Consumption** が継続する、非常に不健全なシステム状態が表示されるはずです。
 
-1. In the Azure Comsos DB left-hand menu, under *Monitoring*, select **Insights**. You'll notice that there are multiple tabs from Overview to Management Options. We'll look at a few of these **Insight** charts. The first tab, the Overview tab, provides a summary of the most common charts you might use. For example, charts like, total request, Data and Index usage, 429 exceptions and Normalized RU consumption.  We saw most of these charts in the previous section.
+> &#128221; 同時に複数のチャートを表示したい場合は、チャート名の上にある **+ New Chart** をクリックしてください。
 
-1. Note on the top of the charts, we can home in on the **Time Range**, so select either *15* or *30* minutes to evaluate the workload in this exercise.
+> &#128221; メトリック自体を直接保存することはできませんが、既存または新規のダッシュボードを作成し、チャート右上の **Pin to dashboard** ボタンで追加できます。ボタンをクリックして **Create new** タブを選択し、名前を *DP-420 labs* にして **Create and pin** をクリックしてください。プライベート ダッシュボードを表示するには、左上の Portal Menu から Azure Resource options の Dashboard を選択してください。初回表示には数分かかる場合があります。
 
-1. On the upper right-hand corner of *each* chart, you'll notice an option to ***Open Metric Explorer***. Let's go ahead and select the  **Open Metric Explorer** option for the **Total Requests** chart. You'll notice that when you select this option will take you to the Metric's reports we reviewed earlier. The advantage of opening the Metric Explorer, is that a good portion of the chart has already been built for us.
+> &#128221; チャートを共有する別の方法として、Share プルダウンから Excel ファイルとしてダウンロードするか、Copy link オプションを使用できます。
 
-1. Lets get back to the Insights page by selecting on the **X** on the upper right of the Metric chart.
+#### サブタスク 2: Azure Monitor Insights レポート
 
-1. Select the Throughput Tab. These charts are good to pinpoint throughput issues.  Pay close attention to the **Normalized RU Consumption (%) By PartitionKeyRangeID** chart, which can be used to detect hot partitions.
+Azure Monitor Metrics の診断レポートは、微調整に時間をかける必要がある場合があります。Cosmos DB Insights は、Azure Cosmos DB リソースの全体的なパフォーマンス、障害、運用状態を可視化します。これらの Insight チャートは、Metric と同様に事前構築されたチャートです。いくつか確認していきます。
 
-1. Select the Requests Tab. These charts are great to both analyze the number of limiting events the account has experience (429 vs. 200) or to review the number of requests per operation type.  
+1. Azure Cosmos DB 左メニューの *Monitoring* で **Insights** を選択してください。Overview から Management Options まで複数のタブがあることを確認できます。これら **Insight** チャートの一部を確認します。最初の Overview タブには、よく使う代表的なチャートのサマリーが表示されます。たとえば、total request、Data and Index usage、429 exceptions、Normalized RU consumption などです。これらの多くは前のセクションで確認しました。
 
-1. Select the Storage Tab. These charts are show us both the growth of our collections, and the data and index usage.  
+1. チャート上部の **Time Range** で、この演習のワークロードを評価するため *15* または *30* 分を選択してください。
 
-1. Select the System Tab. If your application was creating, deleting, or querying the accounts metadata frequently, it's possible to have 429 exceptions.  These charts help us determine if that frequent metadata access is the cause of our 429 exceptions. Additionally, we can determine the status of our metadata requests.  
+1. *各* チャートの右上に ***Open Metric Explorer*** オプションがあります。**Total Requests** チャートで **Open Metric Explorer** を選択してください。このオプションを選択すると、先ほど確認した Metric レポート画面へ移動します。Metric Explorer を開く利点は、チャートの多くがすでに構成済みである点です。
 
-### Azure Monitor Insights reports
+1. Metric チャート右上の **X** を選択して Insights ページに戻ってください。
 
-1. If the Program is still running, go back to the Visual Studio Code Command Terminal.
+1. Throughput タブを選択してください。これらのチャートはスループット問題の特定に有効です。特に、ホット パーティション検出に使える **Normalized RU Consumption (%) By PartitionKeyRangeID** チャートに注目してください。
 
-1. Close the integrated terminal.
+1. Requests タブを選択してください。これらのチャートは、アカウントで発生した制限イベント数（429 vs. 200）の分析と、操作種別ごとの要求数確認の両方に適しています。
 
-1. Close **Visual Studio Code**.
+1. Storage タブを選択してください。これらのチャートは、コレクションの増加状況とデータおよびインデックス使用状況を表示します。
 
-[code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
-[docs.microsoft.com/dotnet/core/tools/dotnet-add-package]: https://docs.microsoft.com/dotnet/core/tools/dotnet-add-package
-[docs.microsoft.com/dotnet/core/tools/dotnet-run]: https://docs.microsoft.com/dotnet/core/tools/dotnet-run
-[nuget.org/packages/microsoft.azure.cosmos/3.22.1]: https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.22.1
-[nuget.org/packages/Newtonsoft.Json/13.0.1]: https://www.nuget.org/packages/Newtonsoft.Json/13.0.1
+1. System タブを選択してください。アプリケーションがアカウント メタデータを頻繁に作成、削除、またはクエリしている場合、429 例外が発生する可能性があります。これらのチャートは、メタデータへの頻繁なアクセスが 429 例外の原因かどうかを判断するのに役立ちます。加えて、メタデータ要求の状態も確認できます。
+
+#### サブタスク 3: Azure Monitor Insights レポート
+
+1. Program がまだ実行中の場合は、Visual Studio Code のコマンド ターミナルに戻ってください。
+
+1. 統合ターミナルを閉じてください。
+
+1. **Visual Studio Code** を閉じてください。
+
+### まとめ
+
+このラボでは、Azure Monitor が Azure Cosmos DB for NoSQL とどのように統合され、詳細な監視およびパフォーマンス分析情報を提供するかを確認しました。Cosmos DB コンテナーに対してシミュレートされたワークロードを実行することで、さまざまなメトリックとテレメトリ データが Azure Monitor でどのように収集・分析されるかを確認しました。
+
+### レビュー
+
+このラボでは、次を完了しました。
+
+- 開発環境を準備した。
+- Azure Cosmos DB NoSQL API アカウントを作成した。
+- .NET スクリプトに Microsoft.Azure.Cosmos と Newtonsoft.Json ライブラリをインポートした。
+- コンテナーとワークロードを作成するスクリプトを実行した。
+- Azure Monitor を使用して Azure Cosmos DB アカウント使用状況を分析した。
+
+### ラボは正常に完了しました
