@@ -1,150 +1,150 @@
 ---
 lab:
-    title: 'Migrate existing data using Azure Data Factory'
-    module: 'Module 2 - Plan and implement Azure Cosmos DB SQL API'
+    title: 'Azure Data Factory を使用して既存データを移行する'
+    module: 'モジュール 2 - Azure Cosmos DB SQL API を計画および実装する'
 ---
 
-# Migrate existing data using Azure Data Factory
+# Azure Data Factory を使用して既存データを移行する
 
-In Azure Data Factory, Azure Cosmos DB is supported as a source of data ingest and as a target (sink) of data output.
+Azure Data Factory では、Azure Cosmos DB はデータ取り込みのソースとしても、データ出力のターゲット（シンク）としてもサポートされています。
 
-In this lab, we will populate Azure Cosmos DB using a helpful command-line utility and then use Azure Data Factory to move a subset of data from one container to another.
+このラボでは、便利なコマンドライン ユーティリティを使用して Azure Cosmos DB にデータを投入し、その後 Azure Data Factory を使用してデータのサブセットを 1 つのコンテナーから別のコンテナーへ移動します。
 
-## Create and seed your Azure Cosmos DB SQL API account
+## Azure Cosmos DB SQL API アカウントを作成してシードする
 
-You will use a command-line utility that creates a **cosmicworks** database and a **products** container at **4,000** request units per second (RU/s). Once created, you will adjust the throughput down to 400 RU/s.
+**4,000** 要求ユニット/秒（RU/s）で **cosmicworks** データベースと **products** コンテナーを作成するコマンドライン ユーティリティを使用します。作成後、スループットを 400 RU/s に下げて調整します。
 
-To accompany the products container, you will create a **flatproducts** container manually that will be the target of the ETL transformation and load operation at the end of this lab.
+products コンテナーに対応させるため、このラボの最後に ETL 変換および読み込み操作のターゲットとなる **flatproducts** コンテナーを手動で作成します。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動します。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインします。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成します。残りのすべての設定は既定値のままにします。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
-    | **Limit the total amount of throughput that can be provisioned on this account** | *Unchecked* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか、新しく作成する* |
+    | **Account Name** | *グローバルに一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
+    | **Limit the total amount of throughput that can be provisioned on this account** | *オフ* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待ちます。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動します。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録します。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録します。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じます。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動します。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code インターフェイスにまだ慣れていない場合は、[Visual Studio Code の Get Started ガイド][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. In **Visual Studio Code**, open the **Terminal** menu and then select **New Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **Terminal** メニューを開き、**New Terminal** を選択して新しいターミナル インスタンスを開きます。
 
-1. Install the [cosmicworks][nuget.org/packages/cosmicworks] command-line tool for global use on your machine.
+1. マシン全体で使用できるように、[cosmicworks][nuget.org/packages/cosmicworks] コマンドライン ツールをインストールします。
 
     ```
     dotnet tool install --global cosmicworks
     ```
 
-    > &#128161; This command may take a couple of minutes to complete. This command will output the warning message (*Tool 'cosmicworks' is already installed') if you have already installed the latest version of this tool in the past.
+    > &#128161; このコマンドは完了までに数分かかる場合があります。過去にこのツールの最新バージョンをすでにインストールしている場合、このコマンドは警告メッセージ（*Tool 'cosmicworks' is already installed'）を出力します。
 
-1. Run cosmicworks to seed your Azure Cosmos DB account with the following command-line options:
+1. 次のコマンドライン オプションで cosmicworks を実行し、Azure Cosmos DB アカウントにデータをシードします。
 
     | **Option** | **Value** |
     | ---: | :--- |
-    | **--endpoint** | *The endpoint value you copied earlier in this lab* |
-    | **--key** | *The key value you coped earlier in this lab* |
+    | **--endpoint** | *このラボで先ほどコピーした endpoint 値* |
+    | **--key** | *このラボで先ほどコピーした key 値* |
     | **--datasets** | *product* |
 
     ```
     cosmicworks --endpoint <cosmos-endpoint> --key <cosmos-key> --datasets product
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/** and your key is: **fDR2ci9QgkdkvERTQ==**, then the command would be:
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** で、key が **fDR2ci9QgkdkvERTQ==** の場合、コマンドは次のようになります。
     > ``cosmicworks --endpoint https://dp420.documents.azure.com:443/ --key fDR2ci9QgkdkvERTQ== --datasets product``
 
-1. Wait for the **cosmicworks** command to finish populating the account with a database, container, and items.
+1. **cosmicworks** コマンドが、データベース、コンテナー、アイテムをアカウントに投入し終えるまで待ちます。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じます。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動します。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインします。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、次にこのラボで先ほど作成または確認したリソース グループを選択し、さらにこのラボで作成した **Azure Cosmos DB account** リソースを選択します。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動します。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, expand the **products** container node, and then select **Items**.
+1. **Data Explorer** で、**cosmicworks** データベース ノードを展開し、**products** コンテナー ノードを展開してから、**Items** を選択します。
 
-1. Observe and select the various JSON items in the **products** container. These are the items created by the command-line tool used in previous steps.
+1. **products** コンテナー内のさまざまな JSON アイテムを確認して選択します。これらは前の手順で使用したコマンドライン ツールによって作成されたアイテムです。
 
-1. Select the **Scale & Settings** node. In the **Scale & Settings** tab, select **Manual**, update the **required throughput** setting from **4000 RU/s** to **400 RU/s** and then **Save** your changes**.
+1. **Scale & Settings** ノードを選択します。**Scale & Settings** タブで **Manual** を選択し、**required throughput** 設定を **4000 RU/s** から **400 RU/s** に更新してから、変更を **Save** します**。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. **Data Explorer** ペインで **New Container** を選択します。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. **New Container** ポップアップで、各設定に次の値を入力し、**OK** を選択します。
 
     | **Setting** | **Value** |
     | --: | :-- |
-    | **Database id** | *Use existing* &vert; *cosmicworks* |
+    | **Database id** | *既存を使用* &vert; *cosmicworks* |
     | **Container id** | *`flatproducts`* |
     | **Partition key** | *`/category`* |
     | **Container throughput (autoscale)** | *Manual* |
     | **RU/s** | *`400`* |
 
-1. Back in the **Data Explorer** pane, expand the **cosmicworks** database node and then observe the **flatproducts** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**cosmicworks** データベース ノードを展開して、階層内の **flatproducts** コンテナー ノードを確認します。
 
-1. Return to the **Home** of the Azure portal.
+1. Azure portal の **Home** に戻ります。
 
-## Create Azure Data Factory resource
+## Azure Data Factory リソースを作成する
 
-Now that the Azure Cosmos DB SQL API resources are in place, you will create an Azure Data Factory resource and configure all of the necessary components and connections to perform a one-time data movement from one SQL API container to another to extract data, transform it, and load it to another SQL API container.
+Azure Cosmos DB SQL API リソースの準備が整ったので、Azure Data Factory リソースを作成し、必要なすべてのコンポーネントと接続を構成して、1 回限りのデータ移動を 1 つの SQL API コンテナーから別の SQL API コンテナーへ実行し、データを抽出、変換し、別の SQL API コンテナーへ読み込みます。
 
-1. Select **+ Create a resource**, search for *Data Factory*, and then create a new **Azure Data Factory** resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Data Factory* を検索してから、次の設定で新しい **Azure Data Factory** リソースを作成します。残りのすべての設定は既定値のままにします。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Name** | *Enter a globally unique name* |
-    | **Region** | *Choose any available region* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか、新しく作成する* |
+    | **Name** | *グローバルに一意の名前を入力する* |
+    | **Region** | *利用可能な任意のリージョンを選択する* |
     | **Version** | *V2* |
-    | **Git configuration** | *Configure Git later* |
+    | **Git configuration** | *後で Git を構成する* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待ちます。
 
-1. Go to the newly created **Azure Data Factory** resource and select **Open Azure Data Factory Studio**.
+1. 新しく作成した **Azure Data Factory** リソースに移動し、**Open Azure Data Factory Studio** を選択します。
 
-    > &#128161; Alternatively, you can navigate to (``adf.azure.com/home``), select your newly created Data Factory resource, and then select the home icon.
+    > &#128161; あるいは、(``adf.azure.com/home``) に移動し、新しく作成した Data Factory リソースを選択してから、ホーム アイコンを選択することもできます。
 
-1. From the home screen. Select the **Ingest** option to begin the quick wizard to perform a one-time copy data at scale operation and move to the **Properties** step of the wizard.
+1. ホーム画面から、**Ingest** オプションを選択して、1 回限りの大規模データ コピー操作を実行するクイック ウィザードを開始し、ウィザードの **Properties** ステップに進みます。
 
-1. Starting with the **Properties** step of the wizard, in the **Task type** section, select **Built-in copy task**.
+1. ウィザードの **Properties** ステップで、**Task type** セクションにある **Built-in copy task** を選択します。
 
-1. In the **Task cadence or task schedule** section, select **Run once now** and then select **Next** to move to the **Source** step of the wizard.
+1. **Task cadence or task schedule** セクションで **Run once now** を選択し、次に **Next** を選択してウィザードの **Source** ステップに進みます。
 
-1. In the **Source** step of the wizard, in the **Source type** list, select **Azure Cosmos DB (SQL API)**.
+1. ウィザードの **Source** ステップで、**Source type** リストから **Azure Cosmos DB (SQL API)** を選択します。
 
-1. In the **Connection** section, select **+ New connection**.
+1. **Connection** セクションで **+ New connection** を選択します。
 
-1. In the **New connection (Azure Cosmos DB (SQL API))** popup, configure the new connection with the following values, and then select **Create**:
+1. **New connection (Azure Cosmos DB (SQL API))** ポップアップで、次の値を使用して新しい接続を構成し、**Create** を選択します。
 
     | **Setting** | **Value** |
     | ---: | :--- |
@@ -152,15 +152,15 @@ Now that the Azure Cosmos DB SQL API resources are in place, you will create an 
     | **Connect via integration runtime** | *AutoResolveIntegrationRuntime* |
     | **Authentication method** | *Account key* &vert; *Connection string* |
     | **Account selection method** | *From Azure subscription* |
-    | **Azure subscription** | *Your existing Azure subscription* |
-    | **Azure Cosmos DB account name** | *Your existing Azure Cosmos DB account name you chose earlier in this lab* |
+    | **Azure subscription** | *既存の Azure サブスクリプション* |
+    | **Azure Cosmos DB account name** | *このラボで先ほど選択した既存の Azure Cosmos DB アカウント名* |
     | **Database name** | *cosmicworks* |
 
-1. Back in the **Source data store** section, within the **Source tables** section, select **Use query**.
+1. **Source data store** セクションに戻り、**Source tables** セクション内で **Use query** を選択します。
 
-1. In the **Table name** list, select **products**.
+1. **Table name** リストで **products** を選択します。
 
-1. In the **Query** editor, delete the existing content and enter the following query:
+1. **Query** エディターで既存の内容を削除し、次のクエリを入力します。
 
     ```
     SELECT 
@@ -171,37 +171,37 @@ Now that the Azure Cosmos DB SQL API resources are in place, you will create an 
         products p
     ```
 
-1. Select **Preview data** to test the query's validity. Select **Next** to move to the **Target** step of the wizard.
+1. **Preview data** を選択してクエリの有効性をテストします。**Next** を選択してウィザードの **Target** ステップに進みます。
 
-1. In the **Target** step of the wizard, in the **Target type** list, select **Azure Cosmos DB (SQL API)**.
+1. ウィザードの **Target** ステップで、**Target type** リストから **Azure Cosmos DB (SQL API)** を選択します。
 
-1. In the **Connection** list, select **CosmosSqlConn**.
+1. **Connection** リストで **CosmosSqlConn** を選択します。
 
-1. In the **Target** list, select **flatproducts** and then select **Next** to move to the **Settings** step of the wizard.
+1. **Target** リストで **flatproducts** を選択し、次に **Next** を選択してウィザードの **Settings** ステップに進みます。
 
-1. In the **Settings** step of the wizard, in the **Task name** field, enter **`FlattenAndMoveData`**.
+1. ウィザードの **Settings** ステップで、**Task name** フィールドに **`FlattenAndMoveData`** と入力します。
 
-1. Leave all remaining fields to their default blank values and then select **Next** to move to the final step of the wizard.
+1. 残りのすべてのフィールドは既定の空白値のままにし、**Next** を選択してウィザードの最終ステップに進みます。
 
-1. Review the **Summary** of the steps you have selected in the wizard and then select **Next**.
+1. ウィザードで選択した手順の **Summary** を確認してから、**Next** を選択します。
 
-1. Observe the various steps in the deployment. When the deployment has finished, select **Finish**.
+1. デプロイのさまざまなステップを確認します。デプロイが完了したら、**Finish** を選択します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動します。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインします。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、次にこのラボで先ほど作成または確認したリソース グループを選択し、さらにこのラボで作成した **Azure Cosmos DB account** リソースを選択します。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動します。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, select the **flatproducts** container node, and then select **New SQL Query**.
+1. **Data Explorer** で、**cosmicworks** データベース ノードを展開し、**flatproducts** コンテナー ノードを選択してから、**New SQL Query** を選択します。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除します。
 
-1. Create a new SQL query that will return all documents where the **name** is equivalent to **HL Headset**:
+1. **name** が **HL Headset** と等しいすべてのドキュメントを返す新しい SQL クエリを作成します。
 
     ```
     SELECT 
@@ -214,11 +214,11 @@ Now that the Azure Cosmos DB SQL API resources are in place, you will create an 
         p.name = 'HL Headset'
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択します。
 
-1. Observe the results of the query.
+1. クエリの結果を確認します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じます。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [nuget.org/packages/cosmicworks]: https://www.nuget.org/packages/cosmicworks
