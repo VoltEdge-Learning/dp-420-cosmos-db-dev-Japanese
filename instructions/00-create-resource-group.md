@@ -1,24 +1,24 @@
 ---
 lab:
-    title: 'Create lab resource group'
+    title: 'ラボ用リソース グループを作成する'
     module: 'Setup'
 ---
 
-# Create Azure resource group for lab
+# ラボ用 Azure リソース グループを作成する
 
-Before completing this lab, you should create a new [resource group][docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal] to place the newly deployed Azure resource into.
+このラボを完了する前に、新しくデプロイする Azure リソースを配置するための新しい [resource group][docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal] を作成してください。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. On the **Home** page, select **Resource groups**.
+1. **Home** ページで **Resource groups** を選択してください。
 
-    > &#128161; Alternatively; expand the **&#8801;** menu, select **All Services**, and in the **All** category, select **Resource groups**.
+    > &#128161; 別の方法として、**&#8801;** メニューを展開し、**All Services** を選択して、**All** カテゴリで **Resource groups** を選択してください。
 
-1. Select **+ Create**.
+1. **+ Create** を選択してください。
 
-1. In the **Create a resource group** popup, create a new resource group with the following settings, leaving all remaining settings to their default values:
+1. **Create a resource group** ポップアップで、次の設定を使用して新しいリソース グループを作成してください。残りの設定は既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
@@ -26,6 +26,6 @@ Before completing this lab, you should create a new [resource group][docs.micros
     | **Resource group** | *Give your resource group a unique name* |
     | **Region** | *Choose any available region* |
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
 [docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal]: https://docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal
