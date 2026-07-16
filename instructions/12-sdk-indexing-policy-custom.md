@@ -1,99 +1,99 @@
 ---
 lab:
-    title: 'Configure an Azure Cosmos DB SQL API container''s index policy with the portal'
-    module: 'Module 6 - Define and implement an indexing strategy for Azure Cosmos DB SQL API'
+    title: 'ポータルを使用して Azure Cosmos DB SQL API コンテナーのインデックス ポリシーを構成する'
+    module: 'モジュール 6 - Azure Cosmos DB SQL API のインデックス戦略を定義して実装する'
 ---
 
-# Configure an Azure Cosmos DB SQL API container's index policy using the SDK
+# SDK を使用して Azure Cosmos DB SQL API コンテナーのインデックス ポリシーを構成する
 
-Indexing policies can be managed from any of the Azure Cosmos DB SDKs. The .NET SDK specifically includes a set of classes that can be used to architect and push a new indexing policy to a container in Azure Cosmos DB SQL API.
+インデックス ポリシーは、どの Azure Cosmos DB SDK からでも管理できます。.NET SDK には特に、Azure Cosmos DB SQL API のコンテナーに新しいインデックス ポリシーを設計して適用するために使用できるクラス群が含まれています。
 
-In this lab, you'll create a custom indexing policy for a container using the .NET SDK
+このラボでは、.NET SDK を使用してコンテナー用のカスタム インデックス ポリシーを作成します。
 
-## Prepare your development environment
+## 開発環境を準備する
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボを実施している環境に **DP-420** のラボ コード リポジトリをまだクローンしていない場合は、次の手順に従って実行してください。それ以外の場合は、以前にクローンしたフォルダーを **Visual Studio Code** で開いてください。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動してください。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code のインターフェイスにまだ慣れていない場合は、[Visual Studio Code の Get Started ガイド][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+1. コマンド パレットを開いて **Git: Clone** を実行し、``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub リポジトリを任意のローカル フォルダーにクローンしてください。
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+    > &#128161; **CTRL+SHIFT+P** キーボード ショートカットを使用してコマンド パレットを開くことができます。
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+1. リポジトリのクローンが完了したら、選択したローカル フォルダーを **Visual Studio Code** で開いてください。
 
-## Create an Azure Cosmos DB SQL API account
+## Azure Cosmos DB SQL API アカウントを作成する
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you will select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key and use them to connect to the Azure Cosmos DB SQL API account using the Azure SDK for .NET or any other SDK of your choice.
+Azure Cosmos DB は、複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングするときは、アカウントでサポートする API（たとえば **Mongo API** や **SQL API**）を選択します。Azure Cosmos DB SQL API アカウントのプロビジョニングが完了したら、エンドポイントとキーを取得し、それらを使用して Azure SDK for .NET または任意の SDK から Azure Cosmos DB SQL API アカウントに接続できます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか新規作成する* |
+    | **Account Name** | *グローバルで一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Create a new indexing policy using the .NET SDK
+## .NET SDK を使用して新しいインデックス ポリシーを作成する
 
-The .NET SDK contains a suite of classes related to the parent [Microsoft.Azure.Cosmos.IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy] class to build new indexing policies in code.
+.NET SDK には、コードで新しいインデックス ポリシーを構築するための、親クラス [Microsoft.Azure.Cosmos.IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy] に関連するクラス群が含まれています。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **12-custom-index-policy** folder.
+1. **Visual Studio Code** の **Explorer** ペインで、**12-custom-index-policy** フォルダーを参照してください。
 
-1. Open the **script.cs** code file.
+1. **script.cs** コード ファイルを開いてください。
 
-1. Update the existing variable named **endpoint** with its value set to the **endpoint** of the Azure Cosmos DB account you created earlier.
+1. 既存の **endpoint** という名前の変数を更新し、先ほど作成した Azure Cosmos DB アカウントの **endpoint** を値として設定してください。
   
     ```
     string endpoint = "<cosmos-endpoint>";
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/**, then the C# statement would be: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**.
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** の場合、C# ステートメントは次のようになります: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**。
 
-1. Update the existing variable named **key** with its value set to the **key** of the Azure Cosmos DB account you created earlier.
+1. 既存の **key** という名前の変数を更新し、先ほど作成した Azure Cosmos DB アカウントの **key** を値として設定してください。
 
     ```
     string key = "<cosmos-key>";
     ```
 
-    > &#128221; For example, if your key is: **fDR2ci9QgkdkvERTQ==**, then the C# statement would be: **string key = "fDR2ci9QgkdkvERTQ==";**.
+    > &#128221; たとえば、key が **fDR2ci9QgkdkvERTQ==** の場合、C# ステートメントは次のようになります: **string key = "fDR2ci9QgkdkvERTQ==";**。
 
-1. Create a new variable of type [IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy] named **policy** using the default empty constructor:
+1. 既定の空コンストラクターを使用して、[IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy] 型の **policy** という名前の新しい変数を作成してください。
 
     ```
     IndexingPolicy policy = new ();
     ```
 
-1. Set the [IndexingMode][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.indexingmode] property of the **policy** variable to a value of [IndexingMode.Consistent][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingmode#fields]:
+1. **policy** 変数の [IndexingMode][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.indexingmode] プロパティを [IndexingMode.Consistent][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingmode#fields] に設定してください。
 
     ```
     policy.IndexingMode = IndexingMode.Consistent;
     ```
 
-1. Add a new object of type [ExcludedPath][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.excludedpath] with its [Path][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.excludedpath.path] property set to a value of **/*** to the [ExcludedPaths][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.excludedpaths] collection property in the **policy** variable:
+1. [ExcludedPath][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.excludedpath] 型の新しいオブジェクトを **policy** 変数の [ExcludedPaths][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.excludedpaths] コレクション プロパティに追加してください。このとき、[Path][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.excludedpath.path] プロパティは **/*** に設定してください。
 
     ```
     policy.ExcludedPaths.Add(
@@ -101,7 +101,7 @@ The .NET SDK contains a suite of classes related to the parent [Microsoft.Azure.
     );
     ```
 
-1. Add a new object of type [IncludedPath][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.includedpath] with its [Path][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.includedpath.path] property set to a value of **/name/?** to the [IncludedPaths][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.includedpaths] collection property in the **policy** variable:
+1. [IncludedPath][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.includedpath] 型の新しいオブジェクトを **policy** 変数の [IncludedPaths][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.indexingpolicy.includedpaths] コレクション プロパティに追加してください。このとき、[Path][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.includedpath.path] プロパティは **/name/?** に設定してください。
 
     ```
     policy.IncludedPaths.Add(
@@ -109,31 +109,31 @@ The .NET SDK contains a suite of classes related to the parent [Microsoft.Azure.
     );
     ```
 
-1. Create a new variable of type [ContainerProperties][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.containerproperties] named **options** passing in the values ``products`` and ``/categoryId`` as constructor parameters:
+1. [ContainerProperties][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.containerproperties] 型の **options** という名前の新しい変数を作成し、コンストラクター パラメーターとして ``products`` と ``/categoryId`` を渡してください。
 
     ```
     ContainerProperties options = new ("products", "/categoryId");
     ```
 
-1. Assign the **policy** variable to the [IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.containerproperties.indexingpolicy] property of the **options** variable:
+1. **options** 変数の [IndexingPolicy][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.containerproperties.indexingpolicy] プロパティに **policy** 変数を割り当ててください。
 
     ```
     options.IndexingPolicy = policy;
     ```
 
-1. Asynchronously invoke the [CreateContainerIfNotExistsAsync][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.database.createcontainerifnotexistsasync] method of the **database** variable passing in the **options** variable as a constructor parameter and storing the result in a variable of type [Container][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container] named **container**:
+1. **database** 変数の [CreateContainerIfNotExistsAsync][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.database.createcontainerifnotexistsasync] メソッドを非同期で呼び出し、コンストラクター パラメーターとして **options** 変数を渡し、結果を [Container][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container] 型の **container** という変数に格納してください。
 
     ```
     Container container = await database.CreateContainerIfNotExistsAsync(options);
     ```
 
-1. Use the built-in **Console.WriteLine** static method to print the [Id][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.id] property of the Container class with a header titled **Container Created**:
+1. 組み込みの **Console.WriteLine** 静的メソッドを使用して、Container クラスの [Id][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.id] プロパティを、**Container Created** というヘッダー付きで出力してください。
 
     ```
     Console.WriteLine($"Container Created [{container.Id}]");
     ```
 
-1. Once you are done, your code file should now include:
+1. 完了したら、コード ファイルに次の内容が含まれていることを確認してください。
   
     ```
     using System;
@@ -163,41 +163,41 @@ The .NET SDK contains a suite of classes related to the parent [Microsoft.Azure.
     Console.WriteLine($"Container Created [{container.Id}]");
     ```
 
-1. **Save** the **script.cs** file.
+1. **script.cs** ファイルを **Save** してください。
 
-1. In **Visual Studio Code**, open the context menu for the **12-custom-index-policy** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **12-custom-index-policy** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-1. Build and run the project using the [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] command:
+1. [dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run] コマンドを使用してプロジェクトをビルドし、実行してください。
 
     ```
     dotnet run
     ```
 
-1. The script will now output the name of the newly created container:
+1. スクリプトにより、新しく作成されたコンテナーの名前が出力されます。
 
     ```
     Container Created [products]
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## Observe an indexing policy created by the .NET SDK using the Data Explorer
+## Data Explorer を使用して .NET SDK で作成したインデックス ポリシーを確認する
 
-Just like with any other indexing policy, you can use the Data Explorer to view policies that you pushed using the .NET SDKs. You will now use the portal to review the policy you created in this lab from code.
+他のインデックス ポリシーと同様に、.NET SDK を使用して適用したポリシーも Data Explorer で表示できます。ここでは、ポータルを使用してこのラボでコードから作成したポリシーを確認します。
 
-1. In a web browser, navigate to the Azure portal (``portal.azure.com``).
+1. Web ブラウザーで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、次にこのラボで先ほど作成または確認したリソース グループを選択し、さらにこのラボで作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the new **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**SQL API** ナビゲーション ツリー内の新しい **products** コンテナー ノードを確認してください。
 
-1. Within the **products** container node of the **SQL API** navigation tree, select **Scale & Settings**.
+1. **SQL API** ナビゲーション ツリーの **products** コンテナー ノード内で、**Scale & Settings** を選択してください。
 
-1. Observe the indexing policy within the **Indexing Policy** section:
+1. **Indexing Policy** セクション内のインデックス ポリシーを確認してください。
 
     ```
     {
@@ -219,9 +219,9 @@ Just like with any other indexing policy, you can use the Data Explorer to view 
     }
     ```
 
-    > &#128221; This is the JSON representation of the indexing policy you created using the .NET SDK in this lab.
+    > &#128221; これは、このラボで .NET SDK を使用して作成したインデックス ポリシーの JSON 表現です。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container]: https://docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container
