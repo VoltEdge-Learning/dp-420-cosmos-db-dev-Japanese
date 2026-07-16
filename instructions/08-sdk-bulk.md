@@ -1,121 +1,121 @@
 ---
 lab:
-    title: 'Move multiple documents in bulk with the Azure Cosmos DB SQL API SDK'
-    module: 'Module 4 - Access and manage data with the Azure Cosmos DB SQL API SDKs'
+    title: 'Azure Cosmos DB SQL API SDK を使用して複数のドキュメントを一括移動する'
+    module: 'モジュール 4 - Azure Cosmos DB SQL API SDK でデータにアクセスして管理する'
 ---
 
-# Move multiple documents in bulk with the Azure Cosmos DB SQL API SDK
+# Azure Cosmos DB SQL API SDK を使用して複数のドキュメントを一括移動する
 
-The easiest way to learn how to perform a bulk operation is to attempt to push many documents to an Azure Cosmos DB SQL API account in the cloud. Using the bulk features of the SDK, this can be done with some minor help from the [System.Threading.Tasks][docs.microsoft.com/dotnet/api/system.threading.tasks] namespace.
+一括操作の実行方法を学ぶ最も簡単な方法は、クラウド上の Azure Cosmos DB SQL API アカウントに多数のドキュメントをプッシュしてみることです。SDK の一括機能を使用すると、[System.Threading.Tasks][docs.microsoft.com/dotnet/api/system.threading.tasks] 名前空間の少しの補助とともにこれを実行できます。
 
-In this lab, you'll use the [Bogus][nuget.org/packages/bogus/33.1.1] library from NuGet to generate fictional data and place that into an Azure Cosmos DB account.
+このラボでは、NuGet の [Bogus][nuget.org/packages/bogus/33.1.1] ライブラリを使用して架空データを生成し、それを Azure Cosmos DB アカウントに格納します。
 
-## Prepare your development environment
+## 開発環境を準備する
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボを実施している環境に **DP-420** のラボ コード リポジトリをまだクローンしていない場合は、次の手順に従って実行してください。それ以外の場合は、以前にクローンしたフォルダーを **Visual Studio Code** で開いてください。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動してください。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Getting Started documentation][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code インターフェイスにまだ慣れていない場合は、[Getting Started ドキュメント][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+1. コマンド パレットを開いて **Git: Clone** を実行し、``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub リポジトリを任意のローカル フォルダーにクローンしてください。
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+    > &#128161; **CTRL+SHIFT+P** キーボード ショートカットを使用してコマンド パレットを開くことができます。
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+1. リポジトリのクローンが完了したら、選択したローカル フォルダーを **Visual Studio Code** で開いてください。
 
-## Create an Azure Cosmos DB SQL API account and configure the SDK project
+## Azure Cosmos DB SQL API アカウントを作成し、SDK プロジェクトを構成する
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
-
-    | **Setting** | **Value** |
-    | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
-
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
-
-1. Wait for the deployment task to complete before continuing with this task.
-
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
-
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
-
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
-
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
-
-1. Still within the newly created **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
-
-1. In the **Data Explorer**, select **New Container**, and then create a new container with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成してください。残りのすべての設定は既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Database id** | *Create new* &vert; *`cosmicworks`* |
-    | **Share throughput across containers** | *Do not select* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか、新しく作成する* |
+    | **Account Name** | *グローバルに一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
+
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
+
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
+
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
+
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
+
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
+
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
+
+1. 新しく作成した **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動してください。
+
+1. **Data Explorer** で **New Container** を選択し、次の設定で新しいコンテナーを作成してください。残りのすべての設定は既定値のままにしてください。
+
+    | **Setting** | **Value** |
+    | ---: | :--- |
+    | **Database id** | *新規作成* &vert; *`cosmicworks`* |
+    | **Share throughput across containers** | *選択しない* |
     | **Container id** | *`products`* |
     | **Partition key** | *`/categoryId`* |
     | **Container throughput** | *Autoscale* &vert; *`4000`* |
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **08-sdk-bulk** folder.
+1. **Visual Studio Code** の **Explorer** ペインで、**08-sdk-bulk** フォルダーを参照してください。
 
-1. Open the **script.cs** code file within the **08-sdk-bulk** folder.
+1. **08-sdk-bulk** フォルダー内の **script.cs** コード ファイルを開いてください。
 
-    > &#128221; The **[Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1]** library has already been pre-imported from NuGet.
+    > &#128221; **[Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1]** ライブラリは、NuGet からすでに事前インポートされています。
 
-1. Locate the **string** variable named **endpoint**. Set its value to the **endpoint** of the Azure Cosmos DB account you created earlier.
+1. **endpoint** という名前の **string** 変数を見つけてください。その値を先ほど作成した Azure Cosmos DB アカウントの **endpoint** に設定してください。
   
     ```
     string endpoint = "<cosmos-endpoint>";
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/**, then the C# statement would be: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**.
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** の場合、C# ステートメントは次のようになります: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**。
 
-1. Locate the **string** variable named **key**. Set its value to the **key** of the Azure Cosmos DB account you created earlier.
+1. **key** という名前の **string** 変数を見つけてください。その値を先ほど作成した Azure Cosmos DB アカウントの **key** に設定してください。
 
     ```
     string key = "<cosmos-key>";
     ```
 
-    > &#128221; For example, if your key is: **fDR2ci9QgkdkvERTQ==**, then the C# statement would be: **string key = "fDR2ci9QgkdkvERTQ==";**.
+    > &#128221; たとえば、key が **fDR2ci9QgkdkvERTQ==** の場合、C# ステートメントは次のようになります: **string key = "fDR2ci9QgkdkvERTQ==";**。
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** してください。
 
-1. Open the context menu for the **08-sdk-bulk** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **08-sdk-bulk** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-    > &#128221; This command will open the terminal with the starting directory already set to the **08-sdk-bulk** folder.
+    > &#128221; このコマンドでは、開始ディレクトリがすでに **08-sdk-bulk** フォルダーに設定された状態でターミナルが開きます。
 
-1. Add the [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] package from NuGet using the following command:
+1. 次のコマンドを使用して、NuGet から [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] パッケージを追加してください。
 
     ```
     dotnet add package Microsoft.Azure.Cosmos --version 3.22.1
     ```
 
-1. Build the project using the [dotnet build][docs.microsoft.com/dotnet/core/tools/dotnet-build] command:
+1. [dotnet build][docs.microsoft.com/dotnet/core/tools/dotnet-build] コマンドを使用してプロジェクトをビルドしてください。
 
     ```
     dotnet build
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-## Bulk inserting a twenty-five thousand documents
+## 25,000 件のドキュメントを一括挿入する
 
-Let's "go for the gusto" and try to insert a lot of documents to see how this works. In our internal testing, this can take approximately 1-2 minutes if the lab virtual machine and Azure Cosmos DB SQL API account are relatively close to each other geographically speaking.
+それでは、仕組みを確認するために多くのドキュメントを挿入してみます。内部テストでは、ラボの仮想マシンと Azure Cosmos DB SQL API アカウントの地理的な距離が比較的近い場合、これにはおよそ 1～2 分かかることがあります。
 
-1. Return to the editor tab for the **script.cs** code file.
+1. **script.cs** コード ファイルのエディター タブに戻ってください。
 
-1. Create a new instance of the [CosmosClientOptions][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclientoptions] named **options** class with the **AllowBulkExecution** property set to a value of **true**:
+1. **AllowBulkExecution** プロパティを **true** に設定した [CosmosClientOptions][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclientoptions] クラスの新しいインスタンスを **options** という名前で作成してください。
 
     ```
     CosmosClientOptions options = new () 
@@ -124,19 +124,19 @@ Let's "go for the gusto" and try to insert a lot of documents to see how this wo
     };
     ```
 
-1. Create a new instance of the **CosmosClient** class named **client** passing in the **endpoint**, **key**, and **options** variables as constructor parameters:
+1. **endpoint**、**key**、**options** 変数をコンストラクター パラメーターとして渡し、**CosmosClient** クラスの新しいインスタンスを **client** という名前で作成してください。
 
     ```
     CosmosClient client = new (endpoint, key, options); 
     ```
 
-1. Use the [GetContainer][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.getcontainer] method of the **client** variable to retrieve the existing container using the name of the database (*cosmicworks*) and the name of the container (*products*):
+1. **client** 変数の [GetContainer][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.getcontainer] メソッドを使用し、データベース名（*cosmicworks*）とコンテナー名（*products*）を使用して既存のコンテナーを取得してください。
 
     ```
     Container container = client.GetContainer("cosmicworks", "products");
     ```
 
-1. Use this special sample code to generate **25,000** fictitious products using the **Faker** class from the Bogus library imported from NuGet.
+1. この特別なサンプル コードを使用して、NuGet からインポートした Bogus ライブラリの **Faker** クラスで **25,000** 件の架空の製品を生成してください。
 
     ```
     List<Product> productsToInsert = new Faker<Product>()
@@ -148,15 +148,15 @@ Let's "go for the gusto" and try to insert a lot of documents to see how this wo
         .Generate(25000);
     ```
 
-    > &#128161; The [Bogus][nuget.org/packages/bogus/33.1.1] library is an open-source library used to design fictitious data to test user interface applications and is great for learning how to develop bulk import/export applications.
+    > &#128161; [Bogus][nuget.org/packages/bogus/33.1.1] ライブラリは、ユーザー インターフェイス アプリケーションをテストするための架空データを作成するオープンソース ライブラリであり、一括インポート/エクスポート アプリケーションの開発方法を学ぶのに適しています。
 
-1. Create a new generic **List<>** of type **Task** named **concurrentTasks**:
+1. **Task** 型の新しいジェネリック **List<>** を **concurrentTasks** という名前で作成してください。
 
     ```
     List<Task> concurrentTasks = new List<Task>();
     ```
 
-1. Create a foreach loop that will iterate over the list of products that was generated earlier in this application:
+1. このアプリケーションで先ほど生成した製品リストを反復処理する foreach ループを作成してください。
 
     ```
     foreach(Product product in productsToInsert)
@@ -164,7 +164,7 @@ Let's "go for the gusto" and try to insert a lot of documents to see how this wo
     }
     ```
 
-1. Within the foreach loop, create a **Task** to asynchornously insert a product into Azure Cosmos DB SQL API being sure to explicitly specify the partition key and to add the task to list of tasks named **concurrentTasks**:
+1. foreach ループ内で、製品を Azure Cosmos DB SQL API に非同期で挿入する **Task** を作成してください。パーティション キーを明示的に指定し、そのタスクを **concurrentTasks** という名前のタスク リストに追加してください。
 
     ```
     concurrentTasks.Add(
@@ -172,19 +172,19 @@ Let's "go for the gusto" and try to insert a lot of documents to see how this wo
     );   
     ```
 
-1. After the foreach loop, asynchronously await the result of **Task.WhenAll** on the **concurrentTasks** variable:
+1. foreach ループの後で、**concurrentTasks** 変数に対する **Task.WhenAll** の結果を非同期で await してください。
 
     ```
     await Task.WhenAll(concurrentTasks);
     ```
 
-1. Use the built-in **Console.WriteLine** static method to print a static message of **Bulk tasks complete** to the console:
+1. 組み込みの静的メソッド **Console.WriteLine** を使用して、**Bulk tasks complete** という固定メッセージをコンソールに出力してください。
 
     ```
     Console.WriteLine("Bulk tasks complete");
     ```
 
-1. Once you are done, your code file should now include:
+1. 完了したら、コード ファイルに次の内容が含まれていることを確認してください。
   
     ```
     using System;
@@ -227,51 +227,51 @@ Let's "go for the gusto" and try to insert a lot of documents to see how this wo
     Console.WriteLine("Bulk tasks complete");
     ```
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** してください。
 
-1. In **Visual Studio Code**, open the context menu for the **08-sdk-bulk** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **08-sdk-bulk** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-1. Build and run the project using the **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** command:
+1. **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** コマンドを使用してプロジェクトをビルドし、実行してください。
 
     ```
     dotnet run
     ```
 
-1. The application should run silently, it should take approximately one to two minutes to run before completing silently.
+1. アプリケーションは静かに実行され、完了までにおよそ 1～2 分かかるはずです。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## Observe the results
+## 結果を確認する
 
-Now that you have sent 25,000 items to Azure Cosmos DB let’s go and look at the Data Explorer.
+25,000 件のアイテムを Azure Cosmos DB に送信したので、Data Explorer を確認します。
 
-1. In a web browser, navigate to the Azure portal (``portal.azure.com``).
+1. Web ブラウザーで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Select **Resource groups**, then select the resource group you created or viewed earlier in this lab, and then select the **Azure Cosmos DB account** resource you created in this lab.
+1. **Resource groups** を選択し、次にこのラボで先ほど作成または確認したリソース グループを選択し、さらにこのラボで作成した **Azure Cosmos DB account** リソースを選択してください。
 
-1. Within the **Azure Cosmos DB** account resource, navigate to the **Data Explorer** pane.
+1. **Azure Cosmos DB** アカウント リソース内で、**Data Explorer** ペインに移動してください。
 
-1. In the **Data Explorer**, expand the **cosmicworks** database node, then observe the **products** container node within the **SQL API** navigation tree.
+1. **Data Explorer** で **cosmicworks** データベース ノードを展開し、**SQL API** ナビゲーション ツリー内の **products** コンテナー ノードを確認してください。
 
-1. Expand the **products** node, and then select the **Items** node. Observe the list of items within your container.
+1. **products** ノードを展開し、**Items** ノードを選択してください。コンテナー内のアイテム一覧を確認してください。
 
-1. Select the **products** container node within the **SQL API** navigation tree, and then select **New SQL Query**.
+1. **SQL API** ナビゲーション ツリー内の **products** コンテナー ノードを選択し、**New SQL Query** を選択してください。
 
-1. Delete the contents of the editor area.
+1. エディター領域の内容を削除してください。
 
-1. Create a new SQL query that will return a count of all documents created using the bulk operation:
+1. 一括操作で作成されたすべてのドキュメント数を返す新しい SQL クエリを作成してください。
 
     ```
     SELECT COUNT(1) FROM items
     ```
 
-1. Select **Execute Query**.
+1. **Execute Query** を選択してください。
 
-1. Observe the count of the items in your container.
+1. コンテナー内のアイテム数を確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.getcontainer]: https://docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.cosmosclient.getcontainer
