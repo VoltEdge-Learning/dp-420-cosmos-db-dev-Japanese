@@ -1,52 +1,52 @@
 ---
 lab:
-    title: 'Search data using Azure Cognitive Search and Azure Cosmos DB SQL API'
-    module: 'Module 7 - Integrate Azure Cosmos DB SQL API with Azure services'
+    title: 'Azure Cognitive Search と Azure Cosmos DB SQL API を使用してデータを検索する'
+    module: 'モジュール 7 - Azure Cosmos DB SQL API を Azure サービスと統合する'
 ---
 
-# Search data using Azure Cognitive Search and Azure Cosmos DB SQL API
+# Azure Cognitive Search と Azure Cosmos DB SQL API を使用してデータを検索する
 
-Azure Cognitive Search combines a search engine as a service with deep integration with AI capabilities to enrich the information in the search index.
+Azure Cognitive Search は、サービスとしての検索エンジンと AI 機能との深い統合を組み合わせることで、検索インデックス内の情報を強化します。
 
-In this lab, you will build an Azure Cognitive Search index that automatically indexes data in an Azure Cosmos DB SQL API container and enriches the data using the Azure Cognitive Services Translator functionality.
+このラボでは、Azure Cosmos DB SQL API コンテナー内のデータを自動的にインデックス化し、Azure Cognitive Services Translator 機能を使用してデータを強化する Azure Cognitive Search インデックスを構築します。
 
-## Create an Azure Cosmos DB SQL API account
+## Azure Cosmos DB SQL API アカウントを作成する
 
-Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple APIs. When provisioning an Azure Cosmos DB account for the first time, you will select which of the APIs you want the account to support (for example, **Mongo API** or **SQL API**). Once the Azure Cosmos DB SQL API account is done provisioning, you can retrieve the endpoint and key and use them to connect to the Azure Cosmos DB SQL API account using the Azure SDK for .NET or any other SDK of your choice.
+Azure Cosmos DB は、複数の API をサポートするクラウドベースの NoSQL データベース サービスです。初めて Azure Cosmos DB アカウントをプロビジョニングするときは、アカウントでサポートする API（たとえば **Mongo API** や **SQL API**）を選択します。Azure Cosmos DB SQL API アカウントのプロビジョニングが完了したら、エンドポイントとキーを取得し、それらを使用して Azure SDK for .NET または任意の SDK から Azure Cosmos DB SQL API アカウントに接続できます。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか新規作成する* |
+    | **Account Name** | *グローバルで一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
     | **Capacity mode** | *Serverless* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
-    1. Record the value of the **PRIMARY CONNECTION STRING** field. You will use this **connection string** value later in this exercise.
+    1. **PRIMARY CONNECTION STRING** フィールドの値を記録してください。この演習の後半でこの **connection string** 値を使用します。
 
-1. Select **Data Explorer** from the resource menu.
+1. リソース メニューから **Data Explorer** を選択してください。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. **Data Explorer** ペインで **New Container** を選択してください。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. **New Container** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
     | --: | :-- |
@@ -54,87 +54,87 @@ Azure Cosmos DB is a cloud-based NoSQL database service that supports multiple A
     | **Container id** | *products* |
     | **Partition key** | */categoryId* |
 
-1. Back in the **Data Explorer** pane, expand the **cosmicworks** database node and then observe the **products** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**cosmicworks** データベース ノードを展開して、階層内の **products** コンテナー ノードを確認してください。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-## Seed your Azure Cosmos DB SQL API account with sample data
+## Azure Cosmos DB SQL API アカウントにサンプル データをシードする
 
-You will use a command-line utility that creates a **cosmicworks** database and a **products** container. The tool will then create a set of items that you will observe using the change feed processor running in your terminal window.
+ここでは、**cosmicworks** データベースと **products** コンテナーを作成するコマンドライン ユーティリティを使用します。次にこのツールが項目セットを作成し、その変更をターミナル ウィンドウで実行中の変更フィード プロセッサーで確認します。
 
-1. In **Visual Studio Code**, open the **Terminal** menu and then select **Split Terminal** to open a new terminal side by side with your existing instance.
+1. **Visual Studio Code** で **Terminal** メニューを開き、**Split Terminal** を選択して、既存のインスタンスと並べて新しいターミナルを開いてください。
 
-1. Install the [cosmicworks][nuget.org/packages/cosmicworks] command-line tool for global use on your machine.
+1. [cosmicworks][nuget.org/packages/cosmicworks] コマンドライン ツールを、マシン全体で使用できるようにインストールしてください。
 
     ```
     dotnet tool install --global cosmicworks
     ```
 
-    > &#128161; This command may take a couple of minutes to complete. This command will output the warning message (*Tool 'cosmicworks' is already installed') if you have already installed the latest version of this tool in the past.
+    > &#128161; このコマンドの完了には数分かかる場合があります。過去にこのツールの最新バージョンをすでにインストールしている場合、このコマンドは警告メッセージ（*Tool 'cosmicworks' is already installed'）を出力します。
 
-1. Run cosmicworks to seed your Azure Cosmos DB account with the following command-line options:
+1. 次のコマンドライン オプションを使用して cosmicworks を実行し、Azure Cosmos DB アカウントをシードしてください。
 
     | **Option** | **Value** |
     | ---: | :--- |
-    | **--endpoint** | *The endpoint value you copied earlier in this lab* |
-    | **--key** | *The key value you coped earlier in this lab* |
+    | **--endpoint** | *このラボの前半でコピーした endpoint 値* |
+    | **--key** | *このラボの前半でコピーした key 値* |
     | **--datasets** | *product* |
 
     ```
     cosmicworks --endpoint <cosmos-endpoint> --key <cosmos-key> --datasets product
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/** and your key is: **fDR2ci9QgkdkvERTQ==**, then the command would be:
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** で、key が **fDR2ci9QgkdkvERTQ==** の場合、コマンドは次のようになります:
     > ``cosmicworks --endpoint https://dp420.documents.azure.com:443/ --key fDR2ci9QgkdkvERTQ== --datasets product``
 
-1. Wait for the **cosmicworks** command to finish populating the account with a database, container, and items.
+1. **cosmicworks** コマンドが、アカウントへのデータベース、コンテナー、および項目の追加を完了するまで待機してください。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
-## Create Azure Cognitive Search resource
+## Azure Cognitive Search リソースを作成する
 
-Before continuing with this exercise, you must first create a new Azure Cognitive Search instance.
+この演習を続行する前に、最初に新しい Azure Cognitive Search インスタンスを作成する必要があります。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cognitive Search*, and then create a new **Azure Cognitive Search** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cognitive Search* を検索してから、次の設定で新しい **Azure Cognitive Search** アカウント リソースを作成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか新規作成する* |
+    | **Name** | *グローバルで一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
     | **Pricing tier** | *Free* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
-1. Go to the newly created **Azure Cognitive Search** account resource.
+1. 新しく作成した **Azure Cognitive Search** アカウント リソースに移動してください。
 
-## Build indexer and index for Azure Cosmos DB SQL API data
+## Azure Cosmos DB SQL API データ用のインデクサーとインデックスを構築する
 
-You will create an indexer that indexes a subset of data in a specific Azure Cosmos DB SQL API container on an hourly basis.
+ここでは、特定の Azure Cosmos DB SQL API コンテナー内のデータのサブセットを 1 時間ごとにインデックス化するインデクサーを作成します。
 
-1. From the **Azure Cognitive Search** resource blade, select **Import data**.
+1. **Azure Cognitive Search** リソース ブレードで **Import data** を選択してください。
 
-1. In the **Connect to your data** step of the **Import data** wizard, in the **Data Source** list, select **Azure Cosmos DB**.
+1. **Import data** ウィザードの **Connect to your data** ステップで、**Data Source** 一覧から **Azure Cosmos DB** を選択してください。
 
-1. Configure the data source with the following settings, leaving all remaining settings to their default values:
+1. 次の設定でデータ ソースを構成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
     | **Data source name** | *products-cosmossql-source* |
-    | **Connection string** | ***connection string** of the Azure Cosmos DB SQL API account created earlier* |
+    | **Connection string** | *先ほど作成した Azure Cosmos DB SQL API アカウントの **connection string*** |
     | **Database** | *cosmicworks* |
     | **Collection** | *products* |
 
-1. In the **query** field, enter the following SQL query to create a materialized view of a subset of your data in the container:
+1. **query** フィールドに次の SQL クエリを入力して、コンテナー内データのサブセットに対するマテリアライズド ビューを作成してください。
 
     ```
     SELECT 
@@ -151,22 +151,22 @@ You will create an indexer that indexes a subset of data in a specific Azure Cos
         p._ts
     ```
 
-1. Select the **Query results ordered by _ts** checkbox.
+1. **Query results ordered by _ts** チェックボックスを選択してください。
 
-    > &#128221; This checkbox lets Azure Cognitive Search know that the query sorts results by the **_ts** field. This type of sorting enables incremental progress tracking. If the indexer fails, it can pick right back up form the same **_ts** value since the results are ordered by the timestamp.
+    > &#128221; このチェックボックスにより、クエリ結果が **_ts** フィールドで並べ替えられていることを Azure Cognitive Search に伝えられます。この種類の並べ替えにより、増分進捗の追跡が可能になります。結果がタイムスタンプ順に並んでいるため、インデクサーが失敗した場合でも同じ **_ts** 値から再開できます。
 
-1. Select **Next: Add cognitive skills**.
+1. **Next: Add cognitive skills** を選択してください。
 
-1. Select **Next: Customize target index**.
+1. **Next: Customize target index** を選択してください。
 
-1. In the **Customize target index** step of the wizard, configure the index with the following settings, leaving all remaining settings to their default values:
+1. ウィザードの **Customize target index** ステップで、次の設定でインデックスを構成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
     | **Index name** | *products-index* |
     | **Key** | *id* |
 
-1. In the field table, configure the **Retrievable**, **Filterable**, **Sortable**, **Facetable**, and **Searchable** options for each field using the following table:
+1. フィールド テーブルで、次の表を使用して各フィールドの **Retrievable**、**Filterable**、**Sortable**、**Facetable**、**Searchable** オプションを構成してください。
 
     | **Field** | **Retrievable** | **Filterable** | **Sortable** | **Facetable** | **Searchable** |
     | ---: | :---: | :---: | :---: | :---: | :---: |
@@ -175,85 +175,85 @@ You will create an indexer that indexes a subset of data in a specific Azure Cos
     | **name** | &#10004; | &#10004; | &#10004; | | &#10004; (English - Microsoft) |
     | **price** | &#10004; | &#10004; | &#10004; | &#10004; | |
 
-1. Select **Next: Create an indexer**.
+1. **Next: Create an indexer** を選択してください。
 
-1. In the **Create an indexer** step of the wizard, configure the indexer with the following settings, leaving all remaining settings to their default values:
+1. ウィザードの **Create an indexer** ステップで、次の設定でインデクサーを構成してください。残りの設定はすべて既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
     | **Name** | *products-cosmosdb-indexer* |
     | **Schedule** | *Hourly* |
 
-1. Select **Submit** to create the data source, index, and indexer.
+1. データ ソース、インデックス、インデクサーを作成するために **Submit** を選択してください。
 
-    > &#128221; You may be required to dismiss a survey popup after creating your first indexer.
+    > &#128221; 最初のインデクサーを作成した後にアンケート ポップアップを閉じる必要がある場合があります。
 
-1. From the **Azure Cognitive Search** resource blade, navigate to the **Indexers** tab to observe the result of your first indexing operation.
+1. **Azure Cognitive Search** リソース ブレードで **Indexers** タブに移動し、最初のインデックス作成操作の結果を確認してください。
 
-1. Wait for the **products-cosmosdb-indexer** indexer to have a status of **Success** before continuing with this task.
+1. このタスクを続行する前に、**products-cosmosdb-indexer** インデクサーのステータスが **Success** になるまで待機してください。
 
-    > &#128221; You may need to use the **Refresh** option to update the blade if it does not update automatically.
+    > &#128221; ブレードが自動更新されない場合は、**Refresh** オプションを使用して更新する必要がある場合があります。
 
-1. Navigate to the **Indexes** tab and then select the **products-index** index.
+1. **Indexes** タブに移動し、**products-index** インデックスを選択してください。
 
-## Validate index with example search queries
+## 例の検索クエリでインデックスを検証する
 
-Now that your materialized view of the Azure Cosmos DB SQL API data is in the search index, you can perform a few basic queries that take advantage of the features in Azure Cognitive Search.
+Azure Cosmos DB SQL API データのマテリアライズド ビューが検索インデックスに作成されたので、Azure Cognitive Search の機能を活用する基本的なクエリをいくつか実行できます。
 
-> &#128221; This lab is not intended to teach the Azure Cognitive Search syntax. These queries were curated to showcase some of the features available in the search index and engine.
+> &#128221; このラボは Azure Cognitive Search の構文を学ぶことを目的としていません。これらのクエリは、検索インデックスと検索エンジンで利用可能な機能の一部を示すために用意されています。
 
-1. In the **products-index** &vert; **index** pane, select **Search** to issue a default search query that returns all possible results using a **\*** (wildcard) operator.
+1. **products-index** &vert; **index** ペインで **Search** を選択し、**\***（ワイルドカード）演算子を使用して、可能なすべての結果を返す既定の検索クエリを実行してください。
 
-1. Observe that this search query returns all possible results.
+1. この検索クエリで可能なすべての結果が返されることを確認してください。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     touring 3000
     ```
 
-1. Observe that this search query returns results that contain either the terms **touring** or **3000** giving a higher score to results that contains both terms. The results are then sorted in descending order by the **@search.score** field.
+1. この検索クエリでは、**touring** または **3000** のいずれかを含む結果が返され、両方の用語を含む結果にはより高いスコアが付与されることを確認してください。結果はその後 **@search.score** フィールドで降順に並べ替えられます。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     red&$count=true
     ```
 
-1. Observe that this search query returns results with the term **red**, but also now includes a metadata field indicating the total count of results even if they are not all included in the same page.
+1. この検索クエリでは **red** という用語を含む結果が返され、同じページにすべて含まれていない場合でも、結果の合計件数を示すメタデータ フィールドが含まれることを確認してください。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     blue&$count=true&$top=6
     ```
 
-1. Observe that this search query only returns a set of six results at a time even though there are more matches server-side.
+1. サーバー側に一致する結果がさらに存在していても、この検索クエリでは 1 回に 6 件のみが返されることを確認してください。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     mountain&$count=true&$top=25&$skip=50
     ```
 
-1. Observe that this search query skips the first 50 results and returns a set of 25 results. If this was a paginated view in a client-side application, you could infer that this would be the third "page" of results.
+1. この検索クエリでは最初の 50 件がスキップされ、25 件の結果が返されることを確認してください。これがクライアント側アプリケーションのページ分割ビューであれば、これは 3 ページ目の結果に相当すると判断できます。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     touring&$count=true&$filter=price lt 500
     ```
 
-1. Observe that this search query only returns results where the value of the numeric price field is less than 500.
+1. この検索クエリでは、数値の price フィールドの値が 500 未満の結果のみが返されることを確認してください。
 
-1. In the **Query string** editor, enter the following query and then select **Search**:
+1. **Query string** エディターに次のクエリを入力し、**Search** を選択してください。
 
     ```
     road&$count=true&$top=15&facet=price,interval:500
     ```
 
-1. Observe that this search query returns a collection of facet data that indicates how many items belong to each category even if they are not all present in the current page of results. In this example, the matching items are broken down into numeric price categories in intervals of 500. This is typically used to populate filters and navigation aids in client-side applications.
+1. この検索クエリでは、現在の結果ページにすべて表示されていない場合でも、各カテゴリに属する項目数を示すファセット データのコレクションが返されることを確認してください。この例では、一致した項目が 500 間隔の数値 price カテゴリに分割されます。これは通常、クライアント側アプリケーションのフィルターやナビゲーション補助を構成するために使用されます。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
