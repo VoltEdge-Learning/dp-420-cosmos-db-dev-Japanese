@@ -1,153 +1,164 @@
----
-lab:
-    title: 'Configure throughput for Azure Cosmos DB SQL API with the Azure portal'
-    module: 'Module 2 - Plan and implement Azure Cosmos DB SQL API'
----
+# Lab 02a - Azure Cosmos DB for NoSQL を計画して実装する
 
-# Configure throughput for Azure Cosmos DB SQL API with the Azure portal
+## ラボ シナリオ
 
-One of the most important things to wrap your head around is configuring throughput in Azure Cosmos DB SQL API. To create an Azure Cosmos DB SQL API container, you must first create an account and then a database; in that order.
+Azure Cosmos DB for NoSQL で最も重要なポイントの 1 つは、スループット構成を理解することです。Azure Cosmos DB for NoSQL コンテナーを作成するには、順番として最初にアカウントを作成し、次にデータベースを作成する必要があります。
+このラボでは、Data Explorer のさまざまな方法を使用してスループットをプロビジョニングします。データベース レベルとコンテナー レベルの両方で、手動またはオートスケールを使用してスループットをプロビジョニングします。
 
-In this lab, you will provision throughput using various methods in the Data Explorer. You will provision throughput either manually or using autoscale, at the database and the container level.
+## ラボの目的
 
-## Create a serverless account
+このラボでは、次のタスクを完了します。
+- タスク 1: サーバーレス アカウントを作成する。
+- タスク 2: プロビジョニング済みアカウントを作成する。
 
-Let’s start simple by creating a serverless account. There’s not much to configure here since everything is serverless. When we create our database and container, we don’t have to provision throughput at all. You will see all of that as we step into creating this account.
+## 推定所要時間: 30 分
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+## アーキテクチャ図
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+![image](architecturedia/lab2.png)
 
-1. Within the **Azure services** category, select **Create a resource**, and then select **Azure Cosmos DB**.
+## 演習 1: Azure portal で Azure Cosmos DB for NoSQL のスループットを構成する
 
-    > &#128161; Alternatively; expand the **&#8801;** menu, select **All Services**, in the **Databases** category, select **Azure Cosmos DB**, and then select **Create**.
+### タスク 1: サーバーレス アカウントを作成する
 
-1. In the **Select API option** pane, select the **Create** option within the **Core (SQL) - Recommended** section.
+まずはシンプルにサーバーレス アカウントを作成します。ここではすべてがサーバーレスのため、構成する項目は多くありません。データベースとコンテナーを作成する際に、スループットをプロビジョニングする必要はありません。このアカウントの作成手順でそれを確認します。
 
-1. Within the **Create Azure Cosmos DB Account** pane, observe the **Basics** tab.
+1. 新しい Web ブラウザーのウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. On the **Basics** tab, enter the following values for each setting:
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
+
+1. **Azure services** カテゴリ内で **Create a resource** を選択し、次に **Azure Cosmos DB** を選択してください。
+
+    > &#128161; 別の方法として、**&#8801;** メニューを展開し、**All Services** を選択して、**Databases** カテゴリ内の **Azure Cosmos DB** を選択し、**Create** を選択してください。
+
+1. **Select API option** ペインで、**Azure Cosmos DB for NoSQL** セクション内の **Create** オプションを選択してください。
+
+1. **Create Azure Cosmos DB Account** ペインで **Basics** タブを確認してください。
+
+1. **Basics** タブで、各設定に次の値を入力してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
-    | **Subscription** | *All resources must belong to a resource group. Every resource group must belong to a subscription. Here, use your existing Azure subscription.* |
-    | **Resource Group** | *All resources must belong to a resource group. Here, select an existing or create a new resource group.* |
-    | **Account Name** | *The globally unique account name. This name will be used as part of the DNS address for requests. Enter any globally unique name. The portal will check the name in real time.* |
-    | **Location** | *Select the geographical region from which your database will initially be hosted. Choose any available region.* |
+    | --- | --- |
+    | **Subscription** | *Your existing Azure subscription* |
+    | **Resource Group** | *Select an existing resource group.* |
+    | **Account Name** | *Enter a globally unique name* |
+    | **Location** | *Choose any available region* |
     | **Capacity mode** | *Select Serverless* |
 
-1. Select **Review + Create** to navigate to the **Review + Create** tab, and then select **Create**.
+1. **Review + Create** を選択して **Review + Create** タブに移動し、次に **Create** を選択してください。
 
-    > &#128221; It can take 10-15 minutes for the Azure Cosmos DB SQL API account to be ready for use.
+    > &#128221; Azure Cosmos DB for NoSQL アカウントが使用可能になるまでに 10〜15 分かかる場合があります。
 
-1. Observe the **Deployment** pane. When the deployment is complete, the pane will update with a **Deployment successful** message.
+1. **Deployment** ペインを確認してください。デプロイが完了すると、ペインは **Deployment successful** メッセージで更新されます。
 
-1. Still within the **Deployment** pane, select **Go to resource**.
+1. 引き続き **Deployment** ペイン内で **Go to resource** を選択してください。
 
-1. From within the **Azure Cosmos DB account** pane, select **Data Explorer** from the resource menu.
+1. **Azure Cosmos DB account** ペイン内で、リソース メニューから **Data Explorer** を選択してください。
 
-1. In the **Data Explorer** pane, expand **New Container** and then select **New Database**.
+1. **Data Explorer** ペインで **New Container** を展開し、**New Database** を選択してください。
 
-1. In the **New Database** popup, enter the following values for each setting, and then select **OK**:
+1. **New Database** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *`cosmicworks`* |
 
-1. Back in the **Data Explorer** pane, observe the **cosmicworks** database node within the hierarchy.
+1. **Data Explorer** ペインに戻り、階層内の **cosmicworks** データベース ノードを確認してください。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. **Data Explorer** ペインで **New Container** を選択してください。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. **New Container** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *Use existing* &vert; *cosmicworks* |
     | **Container id** | *`products`* |
     | **Partition key** | *`/categoryId`* |
 
-1. Back in the **Data Explorer** pane, expand the **cosmicworks** database node and then observe the **products** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**cosmicworks** データベース ノードを展開して、階層内の **products** コンテナー ノードを確認してください。
 
-1. Return to the **Home** of the Azure portal.
+1. Azure portal の **Home** に戻ってください。
 
-## Create a provisioned account
+### タスク 2: プロビジョニング済みアカウントを作成する
 
-Now, we are going to create a provisioned throughput account with more traditional configuration options. This type of account will open up a world of configuration options for us which can be a bit overwhelming. We are going to walk through a few examples of database and container pairings that are possible here.
+次に、より一般的な構成オプションを持つプロビジョニング済みスループット アカウントを作成します。この種類のアカウントでは多くの構成オプションが利用できるため、やや複雑に感じる場合があります。ここでは、可能なデータベースとコンテナーの組み合わせ例をいくつか確認します。
 
-1. Within the **Azure services** category, select **Create a resource**, and then select **Azure Cosmos DB**.
+1. **Azure services** カテゴリ内で **Create a resource** を選択し、次に **Azure Cosmos DB** を選択してください。
 
-    > &#128161; Alternatively; expand the **&#8801;** menu, select **All Services**, in the **Databases** category, select **Azure Cosmos DB**, and then select **Create**.
+    > &#128161; 別の方法として、**&#8801;** メニューを展開し、**All Services** を選択して、**Databases** カテゴリ内の **Azure Cosmos DB** を選択し、**Create** を選択してください。
 
-1. In the **Select API option** pane, select the **Create** option within the **Core (SQL) - Recommended** section.
+1. **Select API option** ペインで、**Azure Cosmos DB for NoSQL** セクション内の **Create** オプションを選択してください。
 
-1. Within the **Create Azure Cosmos DB Account** pane, observe the **Basics** tab.
+1. **Create Azure Cosmos DB Account** ペインで **Basics** タブを確認してください。
 
-1. On the **Basics** tab, enter the following values for each setting:
+1. **Basics** タブで、各設定に次の値を入力してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
-    | **Subscription** | *All resources must belong to a resource group. Every resource group must belong to a subscription. Here, use your existing Azure subscription.* |
-    | **Resource Group** | *All resources must belong to a resource group. Here, select an existing or create a new resource group.* |
-    | **Account Name** | *The globally unique account name. This name will be used as part of the DNS address for requests. Enter any globally unique name. The portal will check the name in real time.* |
-    | **Location** | *Select the geographical region from which your database will initially be hosted. Choose any available region.* |
+    | --- | --- |
+    | **Subscription** | *Your existing Azure subscription* |
+    | **Resource Group** | *Select an existing resource group.* |
+    | **Account Name** | *cosmosdb420-XXXXXX* |
+    | **Location** | *Choose any available region* |
     | **Capacity mode** | *Select provisioned throughput* |
     | **Apply Free Tier Discount** | *Do Not Apply* |
     | **Limit the total amount of throughput that can be provisioned on this account** | *Unchecked* |
+    
+    >**Note**: XXXXXX は、環境の詳細ページで提供される DeploymentID の値に置き換えてください。
 
-1. Select **Review + Create** to navigate to the **Review + Create** tab, and then select **Create**.
+1. **Review + Create** を選択して **Review + Create** タブに移動し、次に **Create** を選択してください。
 
-    > &#128221; It can take 10-15 minutes for the Azure Cosmos DB SQL API account to be ready for use.
+    > &#128221; Azure Cosmos DB for NoSQL アカウントが使用可能になるまでに 10〜15 分かかる場合があります。
 
-1. Observe the **Deployment** pane. When the deployment is complete, the pane will update with a **Deployment successful** message.
+1. **Deployment** ペインを確認してください。デプロイが完了すると、ペインは **Deployment successful** メッセージで更新されます。
 
-1. Still within the **Deployment** pane, select **Go to resource**.
+1. 引き続き **Deployment** ペイン内で **Go to resource** を選択してください。
 
-1. From within the **Azure Cosmos DB account** pane, select **Data Explorer** from the resource menu.
+1. **Azure Cosmos DB account** ペイン内で、リソース メニューから **Data Explorer** を選択してください。
 
-1. In the **Data Explorer** pane, expand **New Container** and then select **New Database**.
+1. **Data Explorer** ペインで **New Container** を展開し、**New Database** を選択してください。
 
-1. In the **New Database** popup, enter the following values for each setting, and then select **OK**:
+1. **New Database** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *`nothroughputdb`* |
     | **Provision throughput** | *Do not select* |
 
-1. Back in the **Data Explorer** pane, observe the **nothroughputdb** database node within the hierarchy.
+1. **Data Explorer** ペインに戻り、階層内の **nothroughputdb** データベース ノードを確認してください。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. **Data Explorer** ペインで **New Container** を選択してください。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. **New Container** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *Use existing* &vert; *nothroughputdb* |
     | **Container id** | *`requiredthroughputcontainer`* |
     | **Partition key** | *`/primarykey`* |
     | **Container throughput** | *Manual* |
     | **RU/s** | *`400`* |
 
-1. Back in the **Data Explorer** pane, expand the **nothroughputdb** database node and then observe the **requiredthroughputcontainer** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**nothroughputdb** データベース ノードを展開して、階層内の **requiredthroughputcontainer** コンテナー ノードを確認してください。
 
-1. In the **Data Explorer** pane, expand **New Container** and then select **New Database**.
+1. **Data Explorer** ペインで **New Container** を展開し、**New Database** を選択してください。
 
-1. In the **New Database** popup, enter the following values for each setting, and then select **OK**:
+1. **New Database** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *`manualthroughputdb`* |
     | **Provision throughput** | *Select this option* |
     | **Database throughput** | *Manual* |
     | **RU/s** | *`400`* |
 
-1. Back in the **Data Explorer** pane, observe the **manualthroughputdb** database node within the hierarchy.
+1. **Data Explorer** ペインに戻り、階層内の **manualthroughputdb** データベース ノードを確認してください。
 
-1. In the **Data Explorer** pane, select **New Container**.
+1. **Data Explorer** ペインで **New Container** を選択してください。
 
-1. In the **New Container** popup, enter the following values for each setting, and then select **OK**:
+1. **New Container** ポップアップで、各設定に次の値を入力し、**OK** を選択してください。
 
     | **Setting** | **Value** |
-    | --: | :-- |
+    | --- | --- |
     | **Database id** | *Use existing* &vert; *manualthroughputdb* |
     | **Container id** | *`childcontainer`* |
     | **Partition key** | *`/primarykey`* |
@@ -155,4 +166,21 @@ Now, we are going to create a provisioned throughput account with more tradition
     | **Container throughput** | *Manual* |
     | **RU/s** | *`1000`* |
 
-1. Back in the **Data Explorer** pane, expand the **manualthroughputdb** database node and then observe the **childcontainer** container node within the hierarchy.
+1. **Data Explorer** ペインに戻り、**manualthroughputdb** データベース ノードを展開して、階層内の **childcontainer** コンテナー ノードを確認してください。
+
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
+
+1. このペインには、SDK からアカウントへ接続するために必要な接続情報と資格情報が含まれています。具体的には次のとおりです。
+
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
+
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
+
+### レビュー
+
+このラボでは、次を完了しました。
+
+- サーバーレス アカウントを作成した。
+- プロビジョニング済みアカウントを作成した。
+
+### ラボは正常に完了しました
