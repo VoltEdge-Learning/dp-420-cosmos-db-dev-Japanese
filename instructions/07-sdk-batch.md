@@ -1,127 +1,127 @@
 ---
 lab:
-    title: 'Batch multiple point operations together with the Azure Cosmos DB SQL API SDK'
-    module: 'Module 4 - Access and manage data with the Azure Cosmos DB SQL API SDKs'
+    title: 'Azure Cosmos DB SQL API SDK で複数のポイント操作をまとめてバッチ処理する'
+    module: 'モジュール 4 - Azure Cosmos DB SQL API SDK でデータにアクセスして管理する'
 ---
 
-# Batch multiple point operations together with the Azure Cosmos DB SQL API SDK
+# Azure Cosmos DB SQL API SDK で複数のポイント操作をまとめてバッチ処理する
 
-The [TransactionalBatch][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatch] and [TransactionalBatchResponse][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatchresponse] classes together are the key to composing and decomposing operations into a single logical step. Using these classes, you can write your code to perform multiple operations and then determine if they were completed successfully server-side.
+[TransactionalBatch][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatch] クラスと [TransactionalBatchResponse][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatchresponse] クラスは、操作を 1 つの論理ステップにまとめたり分解したりするための重要な要素です。これらのクラスを使用すると、複数の操作を実行するコードを記述し、サーバー側で正常に完了したかどうかを判定できます。
 
-In this lab, you’ll use the SDK, to perform two dual-item operations where you attempt to create two items as a single logical unit.
+このラボでは、SDK を使用して、2 つのアイテムを 1 つの論理単位として作成しようとする 2 つのデュアル アイテム操作を実行します。
 
-## Prepare your development environment
+## 開発環境を準備する
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボを実施している環境に **DP-420** のラボ コード リポジトリをまだクローンしていない場合は、次の手順に従って実行してください。それ以外の場合は、以前にクローンしたフォルダーを **Visual Studio Code** で開いてください。
 
-1. Start **Visual Studio Code**.
+1. **Visual Studio Code** を起動してください。
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Getting Started documentation][code.visualstudio.com/docs/getstarted]
+    > &#128221; Visual Studio Code インターフェイスにまだ慣れていない場合は、[Getting Started ドキュメント][code.visualstudio.com/docs/getstarted] を確認してください。
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+1. コマンド パレットを開いて **Git: Clone** を実行し、``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub リポジトリを任意のローカル フォルダーにクローンしてください。
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+    > &#128161; **CTRL+SHIFT+P** キーボード ショートカットを使用してコマンド パレットを開くことができます。
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+1. リポジトリのクローンが完了したら、選択したローカル フォルダーを **Visual Studio Code** で開いてください。
 
-## Create an Azure Cosmos DB SQL API account and configure the SDK project
+## Azure Cosmos DB SQL API アカウントを作成し、SDK プロジェクトを構成する
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザーのウィンドウまたはタブで、Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられている Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. Select **+ Create a resource**, search for *Cosmos DB*, and then create a new **Azure Cosmos DB SQL API** account resource with the following settings, leaving all remaining settings to their default values:
+1. **+ Create a resource** を選択し、*Cosmos DB* を検索してから、次の設定で新しい **Azure Cosmos DB SQL API** アカウント リソースを作成してください。残りのすべての設定は既定値のままにしてください。
 
     | **Setting** | **Value** |
     | ---: | :--- |
-    | **Subscription** | *Your existing Azure subscription* |
-    | **Resource group** | *Select an existing or create a new resource group* |
-    | **Account Name** | *Enter a globally unique name* |
-    | **Location** | *Choose any available region* |
-    | **Capacity mode** | *Provisioned throughput* |
-    | **Apply Free Tier Discount** | *Do Not Apply* |
+    | **Subscription** | *既存の Azure サブスクリプション* |
+    | **Resource group** | *既存のリソース グループを選択するか、新しく作成する* |
+    | **Account Name** | *グローバルに一意の名前を入力する* |
+    | **Location** | *利用可能な任意のリージョンを選択する* |
+    | **Capacity mode** | *プロビジョニングされたスループット* |
+    | **Apply Free Tier Discount** | *適用しない* |
 
-    > &#128221; Your lab environments may have restrictions preventing you from creating a new resource group. If that is the case, use the existing pre-created resource group.
+    > &#128221; ラボ環境には、新しいリソース グループの作成を制限する制約がある場合があります。その場合は、既存の事前作成済みリソース グループを使用してください。
 
-1. Wait for the deployment task to complete before continuing with this task.
+1. このタスクを続行する前に、デプロイ タスクが完了するまで待機してください。
 
-1. Go to the newly created **Azure Cosmos DB** account resource and navigate to the **Keys** pane.
+1. 新しく作成した **Azure Cosmos DB** アカウント リソースに移動し、**Keys** ペインに移動してください。
 
-1. This pane contains the connection details and credentials necessary to connect to the account from the SDK. Specifically:
+1. このペインには、SDK からアカウントに接続するために必要な接続の詳細と資格情報が含まれています。具体的には次のとおりです。
 
-    1. Record the value of the **URI** field. You will use this **endpoint** value later in this exercise.
+    1. **URI** フィールドの値を記録してください。この演習の後半でこの **endpoint** 値を使用します。
 
-    1. Record the value of the **PRIMARY KEY** field. You will use this **key** value later in this exercise.
+    1. **PRIMARY KEY** フィールドの値を記録してください。この演習の後半でこの **key** 値を使用します。
 
-1. Close your web browser window or tab.
+1. Web ブラウザーのウィンドウまたはタブを閉じてください。
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **07-sdk-batch** folder.
+1. **Visual Studio Code** の **Explorer** ペインで、**07-sdk-batch** フォルダーを参照してください。
 
-1. Open the **script.cs** code file within the **07-sdk-batch** folder.
+1. **07-sdk-batch** フォルダー内の **script.cs** コード ファイルを開いてください。
 
-    > &#128221; The **[Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1]** library has already been pre-imported from NuGet.
+    > &#128221; **[Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1]** ライブラリは、NuGet からすでに事前インポートされています。
 
-1. Locate the **string** variable named **endpoint**. Set its value to the **endpoint** of the Azure Cosmos DB account you created earlier.
+1. **endpoint** という名前の **string** 変数を見つけてください。その値を先ほど作成した Azure Cosmos DB アカウントの **endpoint** に設定してください。
   
     ```
     string endpoint = "<cosmos-endpoint>";
     ```
 
-    > &#128221; For example, if your endpoint is: **https&shy;://dp420.documents.azure.com:443/**, then the C# statement would be: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**.
+    > &#128221; たとえば、endpoint が **https&shy;://dp420.documents.azure.com:443/** の場合、C# ステートメントは次のようになります: **string endpoint = "https&shy;://dp420.documents.azure.com:443/";**。
 
-1. Locate the **string** variable named **key**. Set its value to the **key** of the Azure Cosmos DB account you created earlier.
+1. **key** という名前の **string** 変数を見つけてください。その値を先ほど作成した Azure Cosmos DB アカウントの **key** に設定してください。
 
     ```
     string key = "<cosmos-key>";
     ```
 
-    > &#128221; For example, if your key is: **fDR2ci9QgkdkvERTQ==**, then the C# statement would be: **string key = "fDR2ci9QgkdkvERTQ==";**.
+    > &#128221; たとえば、key が **fDR2ci9QgkdkvERTQ==** の場合、C# ステートメントは次のようになります: **string key = "fDR2ci9QgkdkvERTQ==";**。
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** してください。
 
-1. Open the context menu for the **07-sdk-batch** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **07-sdk-batch** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-    > &#128221; This command will open the terminal with the starting directory already set to the **07-sdk-batch** folder.
+    > &#128221; このコマンドでは、開始ディレクトリがすでに **07-sdk-batch** フォルダーに設定された状態でターミナルが開きます。
 
-1. Add the [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] package from NuGet using the following command:
+1. 次のコマンドを使用して、NuGet から [Microsoft.Azure.Cosmos][nuget.org/packages/microsoft.azure.cosmos/3.22.1] パッケージを追加してください。
 
     ```
     dotnet add package Microsoft.Azure.Cosmos --version 3.22.1
     ```
 
-1. Build the project using the [dotnet build][docs.microsoft.com/dotnet/core/tools/dotnet-build] command:
+1. [dotnet build][docs.microsoft.com/dotnet/core/tools/dotnet-build] コマンドを使用してプロジェクトをビルドしてください。
 
     ```
     dotnet build
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-## Creating a transactional batch
+## トランザクション バッチを作成する
 
-First, let’s create a simple transactional batch that makes two fictional products. This batch will insert a worn saddle and a rusty handlebar into the container with the same “used accessories” category identifier. Both items have the same logical partition key, ensuring that we will have a successful batch operation.
+まず、2 つの架空の製品を作成するシンプルなトランザクション バッチを作成します。このバッチでは、同じ「used accessories」カテゴリ識別子を持つコンテナーに、使い古したサドルとさびたハンドルバーを挿入します。両方のアイテムは同じ論理パーティション キーを持つため、バッチ操作は成功します。
 
-1. Return to the editor tab for the **script.cs** code file.
+1. **script.cs** コード ファイルのエディター タブに戻ってください。
 
-1. Create a **Product** variable named **saddle** with a unique identifier of **0120**, a name of **Worn Saddle**, and a category identifier of **9603ca6c-9e28-4a02-9194-51cdb7fea816**:
+1. 一意識別子 **0120**、名前 **Worn Saddle**、カテゴリ識別子 **9603ca6c-9e28-4a02-9194-51cdb7fea816** を持つ **saddle** という名前の **Product** 変数を作成してください。
 
     ```
     Product saddle = new("0120", "Worn Saddle", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
     ```
 
-1. Create a **Product** variable named **handlebar** with a unique identifier of **012A**, a name of **Rusty Handlebar**, and a category identifier of **9603ca6c-9e28-4a02-9194-51cdb7fea816**:
+1. 一意識別子 **012A**、名前 **Rusty Handlebar**、カテゴリ識別子 **9603ca6c-9e28-4a02-9194-51cdb7fea816** を持つ **handlebar** という名前の **Product** 変数を作成してください。
 
     ```
     Product handlebar = new("012A", "Rusty Handlebar", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
     ```
 
-1. Create a variable of type **PartitionKey** named **partitionKey** passing in **9603ca6c-9e28-4a02-9194-51cdb7fea816** as a constructor parameter:
+1. **9603ca6c-9e28-4a02-9194-51cdb7fea816** をコンストラクター パラメーターとして渡し、**partitionKey** という名前の **PartitionKey** 型の変数を作成してください。
 
     ```
     PartitionKey partitionKey = new ("9603ca6c-9e28-4a02-9194-51cdb7fea816");
     ```
 
-1. Invoke the [CreateTransactionalBatch][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.createtransactionalbatch] method of the **container** variable passing in the **partitionkey** variable as a method parameter and using the fluent syntax to invoke the [CreateItem<>][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatch.createitem] generic methods passing in the **saddle** and **handlebar** variables as items to create in individual operations and store the result in a variable named **batch** of type **TransactionalBatch**:
+1. **container** 変数の [CreateTransactionalBatch][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.createtransactionalbatch] メソッドを呼び出し、メソッド パラメーターとして **partitionkey** 変数を渡してください。さらに、fluent 構文で [CreateItem<>][docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.transactionalbatch.createitem] ジェネリック メソッドを呼び出し、個別操作で作成するアイテムとして **saddle** 変数と **handlebar** 変数を渡し、結果を **batch** という名前の **TransactionalBatch** 型の変数に格納してください。
 
     ```
     TransactionalBatch batch = container.CreateTransactionalBatch(partitionKey)
@@ -129,19 +129,19 @@ First, let’s create a simple transactional batch that makes two fictional prod
         .CreateItem<Product>(handlebar);
     ```
 
-1. Within a using statement, asynchronously invoke the **ExecuteAsync** method of the **batch** variable and store the result in a variable of type **TransactionalBatchResponse** named **response**:
+1. using ステートメント内で **batch** 変数の **ExecuteAsync** メソッドを非同期に呼び出し、結果を **response** という名前の **TransactionalBatchResponse** 型の変数に格納してください。
 
     ```
     using TransactionalBatchResponse response = await batch.ExecuteAsync();
     ```
 
-1. Invoke the static **Console.WriteLine** method to output the value of the **StatusCode** property of the **response** variable:
+1. 静的 **Console.WriteLine** メソッドを呼び出し、**response** 変数の **StatusCode** プロパティの値を出力してください。
 
     ```
     Console.WriteLine($"Status:\t{response.StatusCode}");
     ```
 
-1. Once you are done, your code file should now include:
+1. 完了したら、コード ファイルに次の内容が含まれていることを確認してください。
   
     ```
     using System;
@@ -169,27 +169,27 @@ First, let’s create a simple transactional batch that makes two fictional prod
     Console.WriteLine($"Status:\t{response.StatusCode}");
     ```
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** してください。
 
-1. In **Visual Studio Code**, open the context menu for the **07-sdk-batch** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **07-sdk-batch** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-1. Build and run the project using the **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** command:
+1. **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** コマンドを使用してプロジェクトをビルドし、実行してください。
 
     ```
     dotnet run
     ```
 
-1. Observe the output from the terminal. The status code should be an HTTP 200 **OK**.
+1. ターミナルの出力を確認してください。ステータス コードは HTTP 200 **OK** になるはずです。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-## Creating an errant transactional batch
+## エラーとなるトランザクション バッチを作成する
 
-Now, let’s create a transactional batch that will error purposefully. This batch will attempt to insert two items that have different logical partition keys. We will create a flickering strobe light in the “used accessories” category and a new helmet in the “pristine accessories” category. By definition, this should be a bad request and return an error when performing this transaction.
+次に、意図的にエラーとなるトランザクション バッチを作成します。このバッチでは、異なる論理パーティション キーを持つ 2 つのアイテムを挿入しようとします。「used accessories」カテゴリに点滅するストロボ ライトを作成し、「pristine accessories」カテゴリに新しいヘルメットを作成します。定義上、これは不正な要求となり、このトランザクションの実行時にエラーが返されます。
 
-1. Return to the editor tab for the **script.cs** code file.
+1. **script.cs** コード ファイルのエディター タブに戻ってください。
 
-1. Delete the following lines of code:
+1. 次のコード行を削除してください。
 
     ```
     Product saddle = new("0120", "Worn Saddle", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
@@ -206,25 +206,25 @@ Now, let’s create a transactional batch that will error purposefully. This bat
     Console.WriteLine($"Status:\t{response.StatusCode}");
     ```
 
-1. Create a **Product** variable named **light** with a unique identifier of **012B**, a name of **Flickering Strobe Light**, and a category identifier of **9603ca6c-9e28-4a02-9194-51cdb7fea816**:
+1. 一意識別子 **012B**、名前 **Flickering Strobe Light**、カテゴリ識別子 **9603ca6c-9e28-4a02-9194-51cdb7fea816** を持つ **light** という名前の **Product** 変数を作成してください。
 
     ```
     Product light = new("012B", "Flickering Strobe Light", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
     ```
 
-1. Create a **Product** variable named **helmet** with a unique identifier of **012C**, a name of **New Helmet**, and a category identifier of **0feee2e4-687a-4d69-b64e-be36afc33e74**:
+1. 一意識別子 **012C**、名前 **New Helmet**、カテゴリ識別子 **0feee2e4-687a-4d69-b64e-be36afc33e74** を持つ **helmet** という名前の **Product** 変数を作成してください。
 
     ```
     Product helmet = new("012C", "New Helmet", "0feee2e4-687a-4d69-b64e-be36afc33e74");
     ```
 
-1. Create a variable of type **PartitionKey** named **partitionKey** passing in **9603ca6c-9e28-4a02-9194-51cdb7fea816** as a constructor parameter:
+1. **9603ca6c-9e28-4a02-9194-51cdb7fea816** をコンストラクター パラメーターとして渡し、**partitionKey** という名前の **PartitionKey** 型の変数を作成してください。
 
     ```
     PartitionKey partitionKey = new ("9603ca6c-9e28-4a02-9194-51cdb7fea816");
     ```
 
-1. Invoke the **CreateTransactionalBatch** method of the **container** variable passing in the **partitionkey** variable as a method parameter and using the fluent syntax to invoke the **CreateItem<>** generic methods passing in the **light** and **helmet** variables as items to create in individual operations and store the result in a variable named **batch** of type **TransactionalBatch**:
+1. **container** 変数の **CreateTransactionalBatch** メソッドを呼び出し、メソッド パラメーターとして **partitionkey** 変数を渡してください。さらに、fluent 構文で **CreateItem<>** ジェネリック メソッドを呼び出し、個別操作で作成するアイテムとして **light** 変数と **helmet** 変数を渡し、結果を **batch** という名前の **TransactionalBatch** 型の変数に格納してください。
 
     ```
     TransactionalBatch batch = container.CreateTransactionalBatch(partitionKey)
@@ -232,19 +232,19 @@ Now, let’s create a transactional batch that will error purposefully. This bat
         .CreateItem<Product>(helmet);
     ```
 
-1. Within a using statement, asynchronously invoke the **ExecuteAsync** method of the **batch** variable and store the result in a variable of type **TransactionalBatchResponse** named **response**:
+1. using ステートメント内で **batch** 変数の **ExecuteAsync** メソッドを非同期に呼び出し、結果を **response** という名前の **TransactionalBatchResponse** 型の変数に格納してください。
 
     ```
     using TransactionalBatchResponse response = await batch.ExecuteAsync();
     ```
 
-1. Invoke the static **Console.WriteLine** method to output the value of the **StatusCode** property of the **response** variable:
+1. 静的 **Console.WriteLine** メソッドを呼び出し、**response** 変数の **StatusCode** プロパティの値を出力してください。
 
     ```
     Console.WriteLine($"Status:\t{response.StatusCode}");
     ```
 
-1. Once you are done, your code file should now include:
+1. 完了したら、コード ファイルに次の内容が含まれていることを確認してください。
   
     ```
     using System;
@@ -272,21 +272,21 @@ Now, let’s create a transactional batch that will error purposefully. This bat
     Console.WriteLine($"Status:\t{response.StatusCode}");
     ```
 
-1. **Save** the **script.cs** code file.
+1. **script.cs** コード ファイルを **Save** してください。
 
-1. In **Visual Studio Code**, open the context menu for the **07-sdk-batch** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** で **07-sdk-batch** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナル インスタンスを開いてください。
 
-1. Build and run the project using the **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** command:
+1. **[dotnet run][docs.microsoft.com/dotnet/core/tools/dotnet-run]** コマンドを使用してプロジェクトをビルドし、実行してください。
 
     ```
     dotnet run
     ```
 
-1. Observe the output from the terminal. The status code should either be an HTTP 400 **Bad Request** or 409 **Conflict**. This occured because all items within the transaction did not share the same partition key value as the transactional batch.
+1. ターミナルの出力を確認してください。ステータス コードは HTTP 400 **Bad Request** または 409 **Conflict** のいずれかになるはずです。これは、トランザクション内のすべてのアイテムがトランザクション バッチと同じパーティション キー値を共有していなかったために発生しました。
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-1. Close **Visual Studio Code**.
+1. **Visual Studio Code** を閉じてください。
 
 [code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 [docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.createtransactionalbatch]: https://docs.microsoft.com/dotnet/api/microsoft.azure.cosmos.container.createtransactionalbatch
