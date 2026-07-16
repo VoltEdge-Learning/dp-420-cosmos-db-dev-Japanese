@@ -1,36 +1,54 @@
----
-lab:
-    title: 'Measure performance of entities in separate and embeded containers'
-    module: 'Module 8 - Implement a data modeling and partitioning strategy for Azure Cosmos DB SQL API'
----
+# Lab 08a - Azure Cosmos DB for NoSQL のデータ モデリングおよびパーティション戦略を実装する
 
-# Measure performance of entities in separate and embeded containers
+## ラボ シナリオ
 
-In this exercise, you'll measure the difference for customer entities when you model entities as separate containers versus when you model for a NoSQL database by embedding entities in a single document.
+このラボでは、顧客エンティティを個別コンテナーとしてモデル化した場合と、NoSQL データベース向けに単一ドキュメントへ埋め込んでモデル化した場合の違いを測定します。
 
-## Prepare your development environment
+## ラボの目的
 
-If you have not already cloned the lab code repository for **DP-420** to the environment where you're working on this lab, follow these steps to do so. Otherwise, open the previously cloned folder in **Visual Studio Code**.
+このラボでは、次のタスクを完了します。
+- タスク 1: 開発環境を準備する。
+- タスク 2: 顧客エンティティをクエリする。
+- タスク 3: 顧客住所をクエリする。
+- タスク 4: 顧客パスワードをクエリする。
+- タスク 5: 要求課金を合計する。
+- タスク 6: 埋め込みエンティティのパフォーマンスを測定する。
 
-1. Start **Visual Studio Code**.
+## 推定所要時間: 30 分
 
-    > &#128221; If you are not already familiar with the Visual Studio Code interface, review the [Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted]
+## アーキテクチャ図
 
-1. Open the command palette and run **Git: Clone** to clone the ``https://github.com/microsoftlearning/dp-420-cosmos-db-dev`` GitHub repository in a local folder of your choice.
+![image](architecturedia/lab16.png)
 
-    > &#128161; You can use the **CTRL+SHIFT+P** keyboard shortcut to open the command palette.
+## 演習 1: 分離コンテナーと埋め込みコンテナーのエンティティ パフォーマンスを測定する
 
-1. Once the repository has been cloned, open the local folder you selected in **Visual Studio Code**.
+### タスク 1: 開発環境を準備する
 
-1. In **Visual Studio Code**, in the **Explorer** pane, browse to the **16-measure-performance** folder.
+作業環境に **DP-420** のラボ コード リポジトリをまだクローンしていない場合は、次の手順に従ってください。すでにクローン済みの場合は、以前クローンしたフォルダーを **Visual Studio Code** で開いてください。
 
-1. Open the context menu for the **16-measure-performance** folder and then select **Open in Integrated Terminal** to open a new terminal instance.
+1. **Visual Studio Code** を起動してください。
 
-1. If the terminal opens as a **Windows Powershell** terminal, open a new **Git Bash** terminal.
+    > &#128221; Visual Studio Code のインターフェイスに慣れていない場合は、[Get Started guide for Visual Studio Code][code.visualstudio.com/docs/getstarted] を確認してください。
 
-    > &#128161; To open a **Git Bash** terminal, on the right hand side of the the terminal menu,click on the pulldown besides the **+** sign and choose *Git Bash*.
+1. Visual Studio Code を起動してください（プログラム アイコンはデスクトップにピン留めされています）。
 
-1. In the **Git Bash terminal**, run the following commands. The commands open a browser window to connect to the azure portal where you will use the provided lab credentials, run a script that creates a new Azure Cosmos DB account, and then build and start the app you use to populate the database and complete the exercises. *Once the script ask you for the provided credential for the azure account, the build can take 15-20 minutes to finish, so it might be a good time to get some coffee or tea*.
+1. 左側ペインの **Extension (1)** アイコンを選択してください。検索バーに **C# (2)** と入力し、表示された **extension (3)** を選択して、最後に **Install (4)** を選択してください。
+
+    ![](media/C-hash-extension.png)
+
+1. ファイルを開き、左上のオプションから **file->Open Folder** をクリックして **C:\AllFiles** に移動してください。
+
+1. **dp-420-cosmos-db-dev-stage** フォルダーを選択し、**Select Folder** をクリックしてください。
+
+1. **Visual Studio Code** の **Explorer** ペインで **16-measure-performance** フォルダーに移動してください。
+
+1. **16-measure-performance** フォルダーのコンテキスト メニューを開き、**Open in Integrated Terminal** を選択して新しいターミナルを開いてください。
+
+1. ターミナルが **Windows Powershell** で開いた場合は、新しい **Git Bash** ターミナルを開いてください。
+
+    > &#128161; **Git Bash** ターミナルを開くには、ターミナル メニュー右側の **+** の横にあるプルダウンをクリックし、*Git Bash* を選択してください。
+
+1. **Git Bash terminal** で次のコマンドを実行してください。これらのコマンドを実行すると、ブラウザー ウィンドウが開いて Azure portal に接続されます。提供されたラボ資格情報を使用してサインインし、新しい Azure Cosmos DB アカウントを作成するスクリプトを実行した後、データベースを投入して演習を完了するためのアプリをビルドして起動します。*スクリプトが Azure アカウント資格情報の入力を求めてから、ビルド完了まで 15〜20 分かかる場合があります。コーヒーやお茶を用意するのにちょうど良い時間です*。
 
     ```
     az login
@@ -42,101 +60,112 @@ If you have not already cloned the lab code repository for **DP-420** to the env
 
     ```
 
-1. Close the integrated terminal.
+1. 統合ターミナルを閉じてください。
 
-## Measure performance of entities in separate containers
+## 分離コンテナーのエンティティ パフォーマンスを測定する
 
-In Database-v1, data is stored in individual containers. In that database, run queries to get the customer, customer address, and customer password. Review the request charge for each of those queries.
+Database-v1 では、データは個別コンテナーに格納されています。このデータベースで、顧客、顧客住所、顧客パスワードを取得するクエリを実行し、それぞれの要求課金を確認します。
 
-### Query for customer entity
+### タスク 2: 顧客エンティティをクエリする
 
-In Database-v1, run a query to get the customer entity and review the request charge.
+Database-v1 で顧客エンティティを取得するクエリを実行し、要求課金を確認します。
 
-1. In a new web browser window or tab, navigate to the Azure portal (``portal.azure.com``).
+1. 新しい Web ブラウザー ウィンドウまたはタブで Azure portal (``portal.azure.com``) に移動してください。
 
-1. Sign into the portal using the Microsoft credentials associated with your subscription.
+1. サブスクリプションに関連付けられた Microsoft 資格情報を使用してポータルにサインインしてください。
 
-1. On the Azure portal menu, or from the **Home** page, select **Azure Cosmos DB**.
-1. Select the Azure Cosmos DB account with the name that starts with **cosmicworks**.
-1. Select **Data Explorer** on the left side.
-1. Expand **Database-v1**.
-1. Select the **Customer** container.
-1. At the top of the screen, select **New SQL Query**.
-1. Copy and paste the following SQL text and then select **Execute Query**.
+1. Azure portal メニュー、または **Home** ページから **Azure Cosmos DB** を選択してください。
+1. **cosmicworks** で始まる名前の Azure Cosmos DB アカウントを選択してください。
+1. 左側の **Data Explorer** を選択してください。
+1. **Database-v1** を展開してください。
+1. **Customer** コンテナーを選択してください。
+1. 画面上部で **New SQL Query** を選択してください。
+1. 次の SQL テキストをコピーして貼り付け、**Execute Query** を選択してください。
 
     ```
     SELECT * FROM c WHERE c.id = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447"
     ```
 
-1. Select the **Query Stats** tab and note the request charge of 2.83.
+1. **Query Stats** タブを選択し、要求課金が 2.83 であることを確認してください。
 
-    ![Screenshot that shows the query stats for customer query in the database.](media/17-customer-query-v1.png)
+    ![Screenshot that shows the query stats for customer query in the database.](media/17-customer-query-v1-1.png)
 
-### Query for customer address
+### タスク 3: 顧客住所をクエリする
 
-Run a query to get the customer address entity and review the request charge.
+顧客住所エンティティを取得するクエリを実行し、要求課金を確認します。
 
-1. Select the **CustomerAddress** container.
-1. At the top of the screen, select **New SQL Query**.
-1. Copy and paste the following SQL text and then select **Execute Query**.
+1. **CustomerAddress** コンテナーを選択してください。
+1. 画面上部で **New SQL Query** を選択してください。
+1. 次の SQL テキストをコピーして貼り付け、**Execute Query** を選択してください。
 
     ```
     SELECT * FROM c WHERE c.customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447"
     ```
 
-1. Select the **Query Stats** tab and note the request charge of 2.83.
+1. **Query Stats** タブを選択し、要求課金が 2.83 であることを確認してください。
 
-    ![Screenshot that shows the query stats for customer address query in the database.](media/17-customer-address-query-v1.png)
+    ![Screenshot that shows the query stats for customer address query in the database.](media/17-customer-address-query-v1-1.png)
 
-### Query for customer password
+### タスク 4: 顧客パスワードをクエリする
 
-Run a query to get the customer password entity and review the request charge.
+顧客パスワード エンティティを取得するクエリを実行し、要求課金を確認します。
 
-1. Select the **CustomerPassword** container.
-1. At the top of the screen, select **New SQL Query**.
-1. Copy and paste the following SQL text and then select **Execute Query**.
+1. **CustomerPassword** コンテナーを選択してください。
+1. 画面上部で **New SQL Query** を選択してください。
+1. 次の SQL テキストをコピーして貼り付け、**Execute Query** を選択してください。
 
     ```
     SELECT * FROM c WHERE c.id = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447"
     ```
 
-1. Select the **Query Stats** tab and note the request charge of 2.83.
+1. **Query Stats** タブを選択し、要求課金が 2.83 であることを確認してください。
 
-    ![Screenshot that shows the query stats for customer password query in the database.](media/17-customer-password-query-v1.png)
+    ![Screenshot that shows the query stats for customer password query in the database.](media/17-customer-password-query-v1-1.png)
 
-### Add up the request charges
+### タスク 5: 要求課金を合計する
 
-Now that we've run all of our queries, let's add up all of the Request Unit costs for them.
+ここまでですべてのクエリを実行したので、それぞれの Request Unit コストを合計します。
 
 |**Query**|**RU/s cost**|
-|---------|---------|
+| --- | --- |
 |Customer|2.83|
 |Customer Address|2.83|
 |Customer Password|2.83|
 |**Total RU/s**|**8.49**|
 
-## Measure performance of embedded entities
+### タスク 6: 埋め込みエンティティのパフォーマンスを測定する
 
-Now we're going to query for the same information but with the entities embedded in a single document.
+次に、同じ情報を、エンティティが単一ドキュメントに埋め込まれた形でクエリします。
 
-1. Select the **Database-v2** database.
-1. Select the **Customer** container.
-1. Run the following query. 
+1. **Database-v2** データベースを選択してください。
+1. **Customer** コンテナーを選択してください。
+1. 次のクエリを実行してください。
 
     ```
     SELECT * FROM c WHERE c.id = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447"
     ```
 
-1. Observe that the data coming back is now a hierarchy of customer, address, and password data.
+1. 返却されるデータが、顧客、住所、パスワードの階層データになっていることを確認してください。
 
-    ![Screenshot that shows the query results for customer in the database.](media/17-customer-query-v2.png)
+    ![Screenshot that shows the query results for customer in the database.](media/17-customer-query-v2-1.png)
 
-1. Select **Query Stats**. Note the request charge of 2.83, versus the 8.49 RU/s for the three queries that you ran earlier.
+1. **Query Stats** を選択してください。要求課金が 2.83 であり、先ほど 3 つのクエリで実行した合計 8.49 RU/s より低いことを確認してください。
 
-## Compare the performance of the two models
+## 2 つのモデルのパフォーマンスを比較する
 
-When you compare the RU/s for each query that you ran, you see that the last query where the customer entities are in a single document is much less expensive than the combined cost for running the three queries independently. The latency for returning this data is lower because the data is returned in a single operation.
+実行した各クエリの RU/s を比較すると、顧客エンティティを単一ドキュメントに格納した最後のクエリは、3 つのクエリを個別に実行した合計コストより大幅に低コストです。データが 1 回の操作で返されるため、レイテンシも低くなります。
 
-When you're searching for a single item and know the partition key and ID of the data, you can retrieve this data via a *point-read* by calling `ReadItemAsync()` in the Azure Cosmos DB SDK. A point-read is even faster than our query. For the same customer data, the cost is just 1 RU/s, which is a nearly threefold improvement.
+単一アイテムを検索し、パーティション キーとデータ ID が分かっている場合は、Azure Cosmos DB SDK の `ReadItemAsync()` を呼び出す *point-read* でデータを取得できます。point-read はクエリよりさらに高速です。同じ顧客データでもコストは 1 RU/s で、ほぼ 3 倍の改善になります。
 
-[code.visualstudio.com/docs/getstarted]: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
+### レビュー
+
+このラボでは、次を完了しました。
+
+- 開発環境を準備した。
+- 顧客エンティティをクエリした。
+- 顧客住所をクエリした。
+- 顧客パスワードをクエリした。
+- 要求課金を合計した。
+- 埋め込みエンティティのパフォーマンスを測定した。
+
+### ラボは正常に完了しました
